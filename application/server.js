@@ -43,7 +43,7 @@ let plugins = [
     register: require('hapi-swagger'),
     options: {
       info: {
-        title: 'Example API',
+        title: 'Content Discussion Management API',
         description: 'Powered by node, hapi, joi, hapi-swaggered, hapi-swaggered-ui and swagger-ui',
         version: '0.1.0'
       }
