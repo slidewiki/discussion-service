@@ -44,12 +44,7 @@ module.exports = {
         let valid = false;
         try {
           valid = slideModel(slide);
-<<<<<<< HEAD
-          //console.log('validated:', valid);
-          //console.log('validation errors:', slideModel.errors);
 
-=======
->>>>>>> e40a854c502dcfd72289668185ac481d652acaff
           if (!valid) {
             return slideModel.errors;
           }

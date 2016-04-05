@@ -1,7 +1,7 @@
 {
   "name": "discussion-service",
   "version": "0.1.0",
-  "description": "This service handles content discussion managementfor slidewiki.",
+  "description": "This service handles content discussion management for slidewiki.",
   "repository": {
     "type": "git",
     "url": "https://github.com/slidewiki/discussion-service"
