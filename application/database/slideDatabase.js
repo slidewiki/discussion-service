@@ -25,8 +25,8 @@ module.exports = {
         let valid = false;
         try {
           valid = slideModel(slide);
-          console.log('validated:', valid);
-          console.log('validation errors:', slideModel.errors);
+          //console.log('validated:', valid);
+          //console.log('validation errors:', slideModel.errors);
 
           if (!valid) {
             return slideModel.errors;
@@ -47,8 +47,8 @@ module.exports = {
         let valid = false;
         try {
           valid = slideModel(slide);
-          console.log('validated:', valid);
-          console.log('validation errors:', slideModel.errors);
+          //console.log('validated:', valid);
+          //console.log('validation errors:', slideModel.errors);
 
           if (!valid) {
             return slideModel.errors;
