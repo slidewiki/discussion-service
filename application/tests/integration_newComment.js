@@ -21,30 +21,33 @@ describe('REST API', () => {
     done();
   });
 
-  let slide = {
+  let comment = {
+    content: '112233445566778899001214',
+    content_kind: 'slide',
     title: 'Dummy',
-    body: 'dummy',
-    language: 'en'
+    text: 'dummy',
+    user: '112233445566778899001213',
+    parent_comment: '0'
   };
   let options = {
     method: 'POST',
-    url: '/slide/new',
-    payload: slide,
+    url: '/comment/new',
+    payload: comment,
     headers: {
       'Content-Type': 'application/json'
     }
   };
 
-  context('when creating a slide it', () => {
+  context('when creating a comment it', () => {
     it('should reply it', (done) => {
       server.inject(options, (response) => {
         response.should.be.an('object').and.contain.keys('statusCode','payload');
         response.statusCode.should.equal(200);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
-        payload.should.be.an('object').and.contain.keys('title', 'language');
-        payload.title.should.equal('Dummy');
-        payload.language.should.equal('en');
+        payload.should.be.an('object').and.contain.keys('content', 'timestamp', 'user');
+        payload.content.should.equal('112233445566778899001214');
+        payload.user.should.equal('112233445566778899001213');
         done();
       });
     });

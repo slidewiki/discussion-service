@@ -8,11 +8,11 @@ const Joi = require('joi'),
   handlers = require('./controllers/handler');
 
 module.exports = function(server) {
-  //Get slide with id id from database and return it (when not available, return NOT FOUND). Validate id
+  //Get discussion with content id id from database and return the entire tree (when not available, return NOT FOUND). Validate id
   server.route({
     method: 'GET',
-    path: '/slide/{id}',
-    handler: handlers.getSlide,
+    path: '/discussion/{id}',
+    handler: handlers.getDiscussion,
     config: {
       validate: {
         params: {
@@ -20,38 +20,52 @@ module.exports = function(server) {
         },
       },
       tags: ['api'],
-      description: 'Get a slide'
+      description: 'Get a discussion'
     }
   });
 
-  //Create new slide (by payload) and return it (...). Validate payload
+  //Get comment with id id from database and return it (when not available, return NOT FOUND). Validate id
+  server.route({
+    method: 'GET',
+    path: '/comment/{id}',
+    handler: handlers.getComment,
+    config: {
+      validate: {
+        params: {
+          id: Joi.string().alphanum().lowercase()
+        },
+      },
+      tags: ['api'],
+      description: 'Get a comment'
+    }
+  });
+
+  //Create new comment (by payload) and return it (...). Validate payload
   server.route({
     method: 'POST',
-    path: '/slide/new',
-    handler: handlers.newSlide,
+    path: '/comment/new',
+    handler: handlers.newComment,
     config: {
       validate: {
         payload: Joi.object().keys({
           title: Joi.string(),
-          body: Joi.string(),
+          text: Joi.string(),
           user_id: Joi.string().alphanum().lowercase(),
-          root_deck_id: Joi.string().alphanum().lowercase(),
-          parent_deck_id: Joi.string().alphanum().lowercase(),
-          no_new_revision: Joi.boolean(),
-          position: Joi.number().integer().min(0),
-          language: Joi.string()
-        }).requiredKeys('title', 'body'),
+          content_id: Joi.string().alphanum().lowercase(),
+          content_kind: Joi.string().valid('deck', 'slide'),
+          parent_comment_id: Joi.string().alphanum().lowercase()
+        }).requiredKeys('content_id', 'user_id'),
       },
       tags: ['api'],
-      description: 'Create a new slide'
+      description: 'Create a new comment'
     }
   });
 
-  //Update slide with id id (by payload) and return it (...). Validate payload
+  //Update comment with id id (by payload) and return it (...). Validate payload
   server.route({
     method: 'PUT',
-    path: '/slide/{id}',
-    handler: handlers.replaceSlide,
+    path: '/comment/{id}',
+    handler: handlers.updateComment,
     config: {
       validate: {
         params: {
@@ -59,17 +73,15 @@ module.exports = function(server) {
         },
         payload: Joi.object().keys({
           title: Joi.string(),
-          body: Joi.string(),
+          text: Joi.string(),
           user_id: Joi.string().alphanum().lowercase(),
-          root_deck_id: Joi.string().alphanum().lowercase(),
-          parent_deck_id: Joi.string().alphanum().lowercase(),
-          no_new_revision: Joi.boolean(),
-          position: Joi.number().integer().min(0),
-          language: Joi.string()
-        }).requiredKeys('title', 'body'),
+          content_id: Joi.string().alphanum().lowercase(),
+          content_kind: Joi.string().valid('deck', 'slide'),
+          parent_comment_id: Joi.string().alphanum().lowercase()
+        }).requiredKeys('content_id', 'user_id'),
       },
       tags: ['api'],
-      description: 'Replace a slide'
+      description: 'Replace a comment'
     }
   });
 };

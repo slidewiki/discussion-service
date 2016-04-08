@@ -5,17 +5,17 @@ Handles the requests by executing stuff and replying to the client. Uses promise
 'use strict';
 
 const boom = require('boom'), //Boom gives us some predefined http codes and proper responses
-  slideDB = require('../database/slideDatabase'), //Database functions specific for slides
+  commentDB = require('../database/commentDatabase'), //Database functions specific for slides
   co = require('../common');
 
 module.exports = {
-  //Get Slide from database or return NOT FOUND
-  getSlide: function(request, reply) {
-    slideDB.get(encodeURIComponent(request.params.id)).then((slide) => {
-      if (co.isEmpty(slide))
+  //Get Comment from database or return NOT FOUND
+  getComment: function(request, reply) {
+    commentDB.get(encodeURIComponent(request.params.id)).then((comment) => {
+      if (co.isEmpty(comment))
         reply(boom.notFound());
       else
-        reply(co.rewriteID(slide));
+        reply(co.rewriteID(comment));
     }).catch((error) => {
 
       request.log('error', error);
@@ -23,10 +23,11 @@ module.exports = {
     });
   },
 
-  //Create Slide with new id and payload or return INTERNAL_SERVER_ERROR
-  newSlide: function(request, reply) {
-    slideDB.insert(request.payload).then((inserted) => {
-      if (co.isEmpty(inserted.ops[0]))
+  //Create Comment with new id and payload or return INTERNAL_SERVER_ERROR
+  newComment: function(request, reply) {
+    commentDB.insert(request.payload).then((inserted) => {
+      //console.log('inserted: ', inserted);
+      if (co.isEmpty(inserted.ops[0]) || co.isEmpty(inserted.ops[0]))
         throw inserted;
       else
         reply(co.rewriteID(inserted.ops[0]));
@@ -36,9 +37,11 @@ module.exports = {
     });
   },
 
-  //Update Slide with id id and payload or return INTERNAL_SERVER_ERROR
-  replaceSlide: function(request, reply) {
-    slideDB.replace(encodeURIComponent(request.params.id), request.payload).then((replaced) => {
+
+  //Update Comment with id id and payload or return INTERNAL_SERVER_ERROR
+  updateComment: function(request, reply) {
+    commentDB.replace(encodeURIComponent(request.params.id), request.payload).then((replaced) => {
+      //console.log('updated: ', replaced);
       if (co.isEmpty(replaced.value))
         throw replaced;
       else
@@ -48,4 +51,8 @@ module.exports = {
       reply(boom.badImplementation());
     });
   },
+
+  getDiscussion: function(request, reply) {
+    reply(boom.notImplemented);
+  }
 };
