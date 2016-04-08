@@ -26,17 +26,17 @@ const comment = {
     timestamp: {
       type: 'object'
     },
-    user: objectid,
+    user_id: objectid,
     parent_comment: {
       type: 'object'
     },
-    content: objectid,
+    content_id: objectid,
     content_kind: {
       type: 'string',
       enum: ['deck', 'slide']
     },
   },
-  required: ['content', 'user']
+  required: ['content_id', 'user_id']
 };
 
 

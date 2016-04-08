@@ -22,12 +22,11 @@ describe('REST API', () => {
   });
 
   let comment = {
-    content: '112233445566778899001214',
+    content_id: '112233445566778899001214',
     content_kind: 'slide',
     title: 'Dummy',
     text: 'dummy',
-    user: '112233445566778899001213',
-    parent_comment: '0'
+    user_id: '112233445566778899001213'
   };
   let options = {
     method: 'POST',
@@ -42,12 +41,13 @@ describe('REST API', () => {
     it('should reply it', (done) => {
       server.inject(options, (response) => {
         response.should.be.an('object').and.contain.keys('statusCode','payload');
+        console.log(response);
         response.statusCode.should.equal(200);
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
-        payload.should.be.an('object').and.contain.keys('content', 'timestamp', 'user');
-        payload.content.should.equal('112233445566778899001214');
-        payload.user.should.equal('112233445566778899001213');
+        payload.should.be.an('object').and.contain.keys('content_id', 'timestamp', 'user_id');
+        payload.content_id.should.equal('112233445566778899001214');
+        payload.user_id.should.equal('112233445566778899001213');
         done();
       });
     });

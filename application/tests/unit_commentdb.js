@@ -29,59 +29,59 @@ describe('Database', () => {
 
     it('should return the comment when inserting one', () => {
       let comment = {
-        content: '112233445566778899001214',
+        content_id: '112233445566778899001214',
         content_kind: 'slide',
         title: 'Dummy',
         text: 'dummy',
-        user: '112233445566778899001213'
+        user_id: '112233445566778899001213'
       };
       let res = db.insert(comment);
       return Promise.all([
         res.should.be.fulfilled.and.eventually.not.be.empty,
         res.should.eventually.have.property('ops').that.is.not.empty,
-        res.should.eventually.have.deep.property('ops[0]').that.has.all.keys('_id', 'title', 'text', 'timestamp', 'content', 'content_kind', 'user'),
+        res.should.eventually.have.deep.property('ops[0]').that.has.all.keys('_id', 'title', 'text', 'timestamp', 'content_id', 'content_kind', 'user_id'),
         res.should.eventually.have.deep.property('ops[0].title', comment.title)
       ]);
     });
 
     it('should get an previously inserted comment', () => {
       let comment = {
-        content: '112233445566778899001214',
+        content_id: '112233445566778899001214',
         content_kind: 'slide',
         title: 'Dummy',
         text: 'dummy',
-        user: '112233445566778899001213'
+        user_id: '112233445566778899001213'
       };
       let ins = db.insert(comment);
       let res = ins.then((ins) => db.get(ins.ops[0]._id));
       return Promise.all([
         res.should.be.fulfilled.and.eventually.not.be.empty,
-        res.should.eventually.have.all.keys('_id', 'title', 'text', 'timestamp', 'content', 'content_kind', 'user'),
+        res.should.eventually.have.all.keys('_id', 'title', 'text', 'timestamp', 'content_id', 'content_kind', 'user_id'),
         res.should.eventually.have.property('text', comment.text)
       ]);
     });
 
     it('should be able to replace an previously inserted comment', () => {
       let comment = {
-        content: '112233445566778899001214',
+        content_id: '112233445566778899001214',
         content_kind: 'slide',
         title: 'Dummy',
         text: 'dummy',
-        user: '112233445566778899001213'
+        user_id: '112233445566778899001213'
       };
       let comment2 = {
-        content: '112233445566778899001214',
+        content_id: '112233445566778899001214',
         content_kind: 'slide',
         title: 'Dummy2',
         text: 'dummy2',
-        user: '112233445566778899001213'
+        user_id: '112233445566778899001213'
       };
       let ins = db.insert(comment);
       let res = ins.then((ins) => db.replace(ins.ops[0]._id, comment2));
       res = ins.then((ins) => db.get(ins.ops[0]._id));
       return Promise.all([
         res.should.be.fulfilled.and.eventually.not.be.empty,
-        res.should.eventually.have.all.keys('_id', 'title', 'text', 'timestamp', 'content', 'content_kind', 'user'),
+        res.should.eventually.have.all.keys('_id', 'title', 'text', 'timestamp', 'content_id', 'content_kind', 'user_id'),
         res.should.eventually.have.property('title', 'Dummy2')
       ]);
     });
