@@ -17,7 +17,7 @@ if (!co.isEmpty(process.env.APPLICATION_PORT)) {
   console.log('Using port ' + port2 + ' as application port.');
 }
 server.connection({
-  host: 'localhost',
+  //host: 'localhost',
   port: port2
 });
 
