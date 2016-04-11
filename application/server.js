@@ -15,12 +15,8 @@ const server = new hapi.Server();
 let port = (!co.isEmpty(process.env.APPLICATION_PORT)) ? process.env.APPLICATION_PORT : 3000;
 let host = (!co.isEmpty(process.env.VIRTUAL_HOST)) ? process.env.VIRTUAL_HOST : server.info.host;
 server.connection({
-<<<<<<< HEAD
-  //host: 'localhost',
-  port: port2
-=======
   port: port
->>>>>>> 80ec4e0b548a8c12dcb4e85b97bd74e5170a4ee4
+
 });
 
 //Export the webserver to be able to use server.log()
