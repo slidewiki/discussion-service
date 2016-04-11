@@ -11,14 +11,16 @@ const hapi = require('hapi'),
 
 //Initiate the webserver with standard or given port
 const server = new hapi.Server();
-let port2 = 3000;
-if (!co.isEmpty(process.env.APPLICATION_PORT)) {
-  port2 = process.env.APPLICATION_PORT;
-  console.log('Using port ' + port2 + ' as application port.');
-}
+
+let port = (!co.isEmpty(process.env.APPLICATION_PORT)) ? process.env.APPLICATION_PORT : 3000;
+let host = (!co.isEmpty(process.env.VIRTUAL_HOST)) ? process.env.VIRTUAL_HOST : server.info.host;
 server.connection({
+<<<<<<< HEAD
   //host: 'localhost',
   port: port2
+=======
+  port: port
+>>>>>>> 80ec4e0b548a8c12dcb4e85b97bd74e5170a4ee4
 });
 
 //Export the webserver to be able to use server.log()
@@ -42,6 +44,7 @@ let plugins = [
   }, { //Plugin for swagger API documentation
     register: require('hapi-swagger'),
     options: {
+      host: host,
       info: {
         title: 'Content Discussion Management API',
         description: 'Powered by node, hapi, joi, hapi-swaggered, hapi-swaggered-ui and swagger-ui',
