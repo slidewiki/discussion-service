@@ -52,88 +52,156 @@ module.exports = {
     });
   },
 
+  //Get All Comments from database for the id in the request
   getDiscussion: function(request, reply) {
-    // reply(boom.notImplemented);
+    //Clean collection and insert mockup comments - only if request.params.id === 0
+    initMockupData(request.params.id)
+      .then(() => commentDB.getAll(encodeURIComponent(request.params.id))
+      .then((comments) => {
+        if (co.isEmpty(comments))
+          reply(boom.notFound());
+        else {
+          comments.forEach((comment) => {
+            co.rewriteID(comment);
+          });
 
-    //----mockup:start
-    let now = Date.now();
-    function timeFromNow(now, hours, mins) {
-      return now - 60000*mins - 3600000*hours;
-    }
-    let discussion = [
-      {
-        id: 0,
-        author: {
-          id: 7,
-          username: 'Vuk M.',
-          avatar: '/assets/images/mock-avatars/deadpool_256.png'
-        },
-        title: 'Congrats',
-        text: 'Kudos, very good presentation, I\'ll spread the word!',
-        date: timeFromNow(now, 11, 35),
-        replies: [
-          {
-            id: 1,
-            author: {
-              id: 8,
-              username: 'Dejan P.',
-              avatar: '/assets/images/mock-avatars/man_512.png'
-            },
-            title: 'Agreed',
-            text: '^^',
-            date: timeFromNow(now, 10, 0)
-          },
-          {
-            id: 2,
-            author: {
-              id: 9,
-              username: 'Nikola T.',
-              avatar: '/assets/images/mock-avatars/batman_512.jpg'
-            },
-            title: 'Yeah',
-            text: '+1',
-            date: timeFromNow(now, 9, 45)
-          }
-        ]
-      },
-      {
-        id: 3,
-        author: {
-          id: 10,
-          username: 'Marko B.',
-          avatar: '/assets/images/mock-avatars/ninja-simple_512.png'
-        },
-        title: 'Simply the best',
-        text: 'Best presentation I have seen so far on this subject',
-        date: timeFromNow(now, 9, 0)
-      },
-      {
-        id: 4,
-        author: {
-          id: 11,
-          username: 'Voice in the crowd',
-          avatar: '/assets/images/mock-avatars/anon_256.jpg'
-        },
-        title: 'Keep up the good work',
-        text: 'Slide 54 could use some more details.\nGreat presentation though, keep on truckin!',
-        date: timeFromNow(now, 9, 0),
-        replies: [
-          {
-            id: 5,
-            author: {
-              id: 12,
-              username: 'SlideWiki FTW',
-              avatar: '/assets/images/mock-avatars/spooky_256.png'
-            },
-            title: 'Nitpicker!',
-            text: 'Damn nitpickers, everyone\'s a critic these days!',
-            date: timeFromNow(now, 8, 45)
-          }
-        ]
-      }
-    ];
-    console.log(discussion);
-    //----mockup:end
-    reply(discussion);
+          let now = Date.now();
+          let replies = [];
+          comments.forEach((comment, index) => {
+            comment.author = authorsMap.get(comment.user_id);//insert author data
+            comment.date = now - comment.timestamp;//insert date
+            //move replies to their places
+            let parent_comment = comment.parent_comment;
+            if (parent_comment !== undefined) {
+              comments.forEach((comment2) => {
+                if (parent_comment.toString() === comment2.id.toString()) {
+
+                  if (comment2.replies === undefined) {//add comment to replies
+                    comment2.replies = [];
+                  }
+                  comment2.replies.push(comment);
+                  replies.push(index);
+                }
+              });
+            }
+          });
+
+          //remove comments which were inserted as replies
+          replies.reverse();
+          replies.forEach((i) => {
+            comments.splice(i, 1);
+          });
+
+          let jsonReply = JSON.stringify(comments);
+          reply(jsonReply);
+        }
+      })).catch((error) => {
+        request.log('error', error);
+        reply(boom.badImplementation());
+      });
+
   }
 };
+
+
+//Delete all and insert mockup data
+function initMockupData(identifier) {
+  if (parseInt(identifier) === 0) {//create collection, delete all and insert mockup data only if the user has explicitly sent 0
+    return commentDB.createCollection()
+      .then(() => commentDB.deleteAll())
+      .then(() => insertMockupData());
+  }
+  return new Promise((resolve) => {resolve (1);});
+}
+
+//Insert mockup data to the collection
+function insertMockupData() {
+  let comment1 = {
+    content_id: '112233445566778899001214',
+    content_kind: 'slide',
+    title: 'Congrats',
+    text: 'Kudos, very good presentation, I\'ll spread the word!',
+    user_id: '112233445566778899000001'
+  };
+  let ins1 = commentDB.insert(comment1);
+  let ins2 = ins1.then((ins1) => {
+    let reply1 = {
+      content_id: '112233445566778899001214',
+      content_kind: 'slide',
+      title: 'Agreed',
+      text: '^^',
+      user_id: '112233445566778899000002',
+      parent_comment: ins1.ops[0]._id
+    };
+    let reply2 = {
+      content_id: '112233445566778899001214',
+      content_kind: 'slide',
+      title: 'Yeah',
+      text: '+1',
+      user_id: '112233445566778899000003',
+      parent_comment: ins1.ops[0]._id
+    };
+    return commentDB.insert(reply1).then(() => commentDB.insert(reply2));
+  });
+
+  let comment2 = {
+    content_id: '112233445566778899001214',
+    content_kind: 'slide',
+    title: 'Simply the best',
+    text: 'The best presentation I have seen so far on this subject',
+    user_id: '112233445566778899000004'
+  };
+  let ins4 = ins2.then(() => commentDB.insert(comment2));
+  let comment3 = {
+    content_id: '112233445566778899001214',
+    content_kind: 'slide',
+    title: 'Keep up the good work',
+    text: 'Slide 54 could use some more details.\nGreat presentation though, keep on truckin!',
+    user_id: '112233445566778899000005'
+  };
+  let ins5 = ins4.then(() => commentDB.insert(comment3));
+  return ins5.then((ins5) => {
+    let reply3 = {
+      content_id: '112233445566778899001214',
+      content_kind: 'slide',
+      title: 'Nitpicker!',
+      text: 'Damn nitpickers, everyone\'s a critic these days!',
+      user_id: '112233445566778899000006',
+      parent_comment: ins5.ops[0]._id
+    };
+    return commentDB.insert(reply3);
+  });
+}
+
+let authorsMap = new Map([
+  ['112233445566778899000001', {
+    id: 7,
+    username: 'Vuk M.',
+    avatar: '/assets/images/mock-avatars/deadpool_256.png'
+  }],
+  ['112233445566778899000002', {
+    id: 8,
+    username: 'Dejan P.',
+    avatar: '/assets/images/mock-avatars/man_512.png'
+  }],
+  ['112233445566778899000003', {
+    id: 9,
+    username: 'Nikola T.',
+    avatar: '/assets/images/mock-avatars/batman_512.jpg'
+  }],
+  ['112233445566778899000004', {
+    id: 10,
+    username: 'Marko B.',
+    avatar: '/assets/images/mock-avatars/ninja-simple_512.png'
+  }],
+  ['112233445566778899000005', {
+    id: 11,
+    username: 'Voice in the crowd',
+    avatar: '/assets/images/mock-avatars/anon_256.jpg'
+  }],
+  ['112233445566778899000006', {
+    id: 12,
+    username: 'SlideWiki FTW',
+    avatar: '/assets/images/mock-avatars/spooky_256.png'
+  }]
+]);
