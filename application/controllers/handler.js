@@ -65,11 +65,11 @@ module.exports = {
             co.rewriteID(comment);
           });
 
-          let now = Date.now();
+          // let now = Date.now();
           let replies = [];
           comments.forEach((comment, index) => {
             comment.author = authorsMap.get(comment.user_id);//insert author data
-            comment.date = now - comment.timestamp;//insert date
+            // comment.date = now - comment.timestamp;//insert date
             //move replies to their places
             let parent_comment = comment.parent_comment;
             if (parent_comment !== undefined) {
@@ -117,7 +117,7 @@ function initMockupData(identifier) {
 //Insert mockup data to the collection
 function insertMockupData() {
   let comment1 = {
-    content_id: '112233445566778899001214',
+    content_id: '112233445566778899000671',
     content_kind: 'slide',
     title: 'Congrats',
     text: 'Kudos, very good presentation, I\'ll spread the word!',
@@ -126,7 +126,7 @@ function insertMockupData() {
   let ins1 = commentDB.insert(comment1);
   let ins2 = ins1.then((ins1) => {
     let reply1 = {
-      content_id: '112233445566778899001214',
+      content_id: '112233445566778899000671',
       content_kind: 'slide',
       title: 'Agreed',
       text: '^^',
@@ -134,7 +134,7 @@ function insertMockupData() {
       parent_comment: ins1.ops[0]._id
     };
     let reply2 = {
-      content_id: '112233445566778899001214',
+      content_id: '112233445566778899000671',
       content_kind: 'slide',
       title: 'Yeah',
       text: '+1',
@@ -145,7 +145,7 @@ function insertMockupData() {
   });
 
   let comment2 = {
-    content_id: '112233445566778899001214',
+    content_id: '112233445566778899000671',
     content_kind: 'slide',
     title: 'Simply the best',
     text: 'The best presentation I have seen so far on this subject',
@@ -153,7 +153,7 @@ function insertMockupData() {
   };
   let ins4 = ins2.then(() => commentDB.insert(comment2));
   let comment3 = {
-    content_id: '112233445566778899001214',
+    content_id: '112233445566778899000671',
     content_kind: 'slide',
     title: 'Keep up the good work',
     text: 'Slide 54 could use some more details.\nGreat presentation though, keep on truckin!',
@@ -162,7 +162,7 @@ function insertMockupData() {
   let ins5 = ins4.then(() => commentDB.insert(comment3));
   return ins5.then((ins5) => {
     let reply3 = {
-      content_id: '112233445566778899001214',
+      content_id: '112233445566778899000671',
       content_kind: 'slide',
       title: 'Nitpicker!',
       text: 'Damn nitpickers, everyone\'s a critic these days!',

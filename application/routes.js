@@ -53,7 +53,7 @@ module.exports = function(server) {
           user_id: Joi.string().alphanum().lowercase(),
           content_id: Joi.string().alphanum().lowercase(),
           content_kind: Joi.string().valid('deck', 'slide'),
-          parent_comment_id: Joi.string().alphanum().lowercase()
+          parent_comment: Joi.string().alphanum().lowercase()
         }).requiredKeys('content_id', 'user_id'),
       },
       tags: ['api'],
@@ -77,7 +77,7 @@ module.exports = function(server) {
           user_id: Joi.string().alphanum().lowercase(),
           content_id: Joi.string().alphanum().lowercase(),
           content_kind: Joi.string().valid('deck', 'slide'),
-          parent_comment_id: Joi.string().alphanum().lowercase()
+          parent_comment: Joi.string().alphanum().lowercase()
         }).requiredKeys('content_id', 'user_id'),
       },
       tags: ['api'],

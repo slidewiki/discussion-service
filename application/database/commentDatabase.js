@@ -19,14 +19,11 @@ module.exports = {
   },
 
   getAll: function(identifier) {
-  //TODO use content identifier
-
     return helper.connectToDatabase()
       .then((db) => db.collection(collectionName))
-      .then((col) => col.find())// { content_id: oid(identifier) }))
+      .then((col) => col.find({ content_id: oid(identifier) }))
       .then((stream) => stream.toArray());
   },
-
 
   insert: function(comment) {
     //TODO check for content and parent comment ids to be existant

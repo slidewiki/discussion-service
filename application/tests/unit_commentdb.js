@@ -29,7 +29,7 @@ describe('Database', () => {
 
     it('should return the comment when inserting one', () => {
       let comment = {
-        content_id: '112233445566778899001214',
+        content_id: '112233445566778899000671',
         content_kind: 'slide',
         title: 'Dummy',
         text: 'dummy',
@@ -46,7 +46,7 @@ describe('Database', () => {
 
     it('should get an previously inserted comment', () => {
       let comment = {
-        content_id: '112233445566778899001214',
+        content_id: '112233445566778899000671',
         content_kind: 'slide',
         title: 'Dummy',
         text: 'dummy',
@@ -63,14 +63,14 @@ describe('Database', () => {
 
     it('should be able to replace an previously inserted comment', () => {
       let comment = {
-        content_id: '112233445566778899001214',
+        content_id: '112233445566778899000671',
         content_kind: 'slide',
         title: 'Dummy',
         text: 'dummy',
         user_id: '112233445566778899001213'
       };
       let comment2 = {
-        content_id: '112233445566778899001214',
+        content_id: '112233445566778899000671',
         content_kind: 'slide',
         title: 'Dummy2',
         text: 'dummy2',

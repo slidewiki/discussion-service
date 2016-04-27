@@ -22,7 +22,7 @@ describe('REST API', () => {
   });
 
   let comment = {
-    content_id: '112233445566778899001214',
+    content_id: '112233445566778899000671',
     content_kind: 'slide',
     title: 'Dummy',
     text: 'dummy',
@@ -46,7 +46,7 @@ describe('REST API', () => {
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
         payload.should.be.an('object').and.contain.keys('content_id', 'timestamp', 'user_id');
-        payload.content_id.should.equal('112233445566778899001214');
+        payload.content_id.should.equal('112233445566778899000671');
         payload.user_id.should.equal('112233445566778899001213');
         done();
       });
