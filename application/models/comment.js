@@ -27,9 +27,7 @@ const comment = {
       type: 'object'
     },
     user_id: objectid,
-    parent_comment: {
-      type: 'object'
-    },
+    parent_comment: objectid,
     content_id: objectid,
     content_kind: {
       type: 'string',
