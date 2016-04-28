@@ -58,43 +58,43 @@ module.exports = {
     initMockupData(request.params.id)
       .then(() => commentDB.getAll(encodeURIComponent(request.params.id))
       .then((comments) => {
-        if (co.isEmpty(comments))
-          reply(boom.notFound());
-        else {
-          comments.forEach((comment) => {
-            co.rewriteID(comment);
-          });
+        // if (co.isEmpty(comments))
+        //   reply(boom.notFound());
+        // else {
+        comments.forEach((comment) => {
+          co.rewriteID(comment);
+        });
 
-          // let now = Date.now();
-          let replies = [];
-          comments.forEach((comment, index) => {
-            comment.author = authorsMap.get(comment.user_id);//insert author data
-            // comment.date = now - comment.timestamp;//insert date
-            //move replies to their places
-            let parent_comment = comment.parent_comment;
-            if (parent_comment !== undefined) {
-              comments.forEach((comment2) => {
-                if (parent_comment.toString() === comment2.id.toString()) {
+        // let now = Date.now();
+        let replies = [];
+        comments.forEach((comment, index) => {
+          comment.author = authorsMap.get(comment.user_id);//insert author data
+          // comment.date = now - comment.timestamp;//insert date
+          //move replies to their places
+          let parent_comment = comment.parent_comment;
+          if (parent_comment !== undefined) {
+            comments.forEach((comment2) => {
+              if (parent_comment.toString() === comment2.id.toString()) {
 
-                  if (comment2.replies === undefined) {//add comment to replies
-                    comment2.replies = [];
-                  }
-                  comment2.replies.push(comment);
-                  replies.push(index);
+                if (comment2.replies === undefined) {//add comment to replies
+                  comment2.replies = [];
                 }
-              });
-            }
-          });
+                comment2.replies.push(comment);
+                replies.push(index);
+              }
+            });
+          }
+        });
 
-          //remove comments which were inserted as replies
-          replies.reverse();
-          replies.forEach((i) => {
-            comments.splice(i, 1);
-          });
+        //remove comments which were inserted as replies
+        replies.reverse();
+        replies.forEach((i) => {
+          comments.splice(i, 1);
+        });
 
-          let jsonReply = JSON.stringify(comments);
-          reply(jsonReply);
-        }
+        let jsonReply = JSON.stringify(comments);
+        reply(jsonReply);
+
       })).catch((error) => {
         request.log('error', error);
         reply(boom.badImplementation());
