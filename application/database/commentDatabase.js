@@ -19,7 +19,6 @@ module.exports = {
   },
 
   getAll: function(identifier) {
-    console.log(oid(identifier));
     return helper.connectToDatabase()
       .then((db) => db.collection(collectionName))
       .then((col) => col.find({ content_id: String(oid(identifier)) }))//TODO cast to String?
@@ -73,6 +72,15 @@ module.exports = {
       .then((db) => db.collection(collectionName))
       .then((col) => col.remove({
         _id: oid(identifier)
+      }));
+  },
+
+  deleteAllWithContentID: function(identifier) {
+    console.log(oid(identifier));
+    return helper.connectToDatabase()
+      .then((db) => db.collection(collectionName))
+      .then((col) => col.remove({
+        content_id: identifier
       }));
   },
 

@@ -84,4 +84,34 @@ module.exports = function(server) {
       description: 'Replace a comment'
     }
   });
+
+  server.route({
+    method: 'DELETE',
+    path: '/comment/delete',
+    handler: handlers.deleteComment,
+    config: {
+      validate: {
+        payload: {
+          id: Joi.string().alphanum().lowercase()
+        },
+      },
+      tags: ['api'],
+      description: 'Delete a comment'
+    }
+  });
+  
+  server.route({
+    method: 'DELETE',
+    path: '/discussion/delete',
+    handler: handlers.deleteDiscussion,
+    config: {
+      validate: {
+        payload: {
+          content_id: Joi.string().alphanum().lowercase()
+        },
+      },
+      tags: ['api'],
+      description: 'Delete a discussion'
+    }
+  });
 };

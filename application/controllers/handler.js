@@ -52,6 +52,25 @@ module.exports = {
     });
   },
 
+  deleteComment: function(request, reply) {
+    commentDB.delete(encodeURIComponent(request.payload.id)).then(() =>
+      reply({'msg': 'comment is successfully deleted...'})
+    ).catch((error) => {
+      request.log('error', error);
+      reply(boom.badImplementation());
+    });
+  },
+
+  deleteDiscussion: function(request, reply) {
+    console.log(request.payload.content_id);
+    commentDB.deleteAllWithContentID(encodeURIComponent(request.payload.content_id)).then(() =>
+      reply({'msg': 'discussion is successfully deleted...'})
+    ).catch((error) => {
+      request.log('error', error);
+      reply(boom.badImplementation());
+    });
+  },
+
   //Get All Comments from database for the id in the request
   getDiscussion: function(request, reply) {
     //Clean collection and insert mockup comments - only if request.params.id === 0
@@ -103,10 +122,9 @@ module.exports = {
   }
 };
 
-
 //Delete all and insert mockup data
 function initMockupData(identifier) {
-  if (parseInt(identifier) === 0) {//create collection, delete all and insert mockup data only if the user has explicitly sent 0
+  if (identifier === '000000000000000000000000') {//create collection, delete all and insert mockup data only if the user has explicitly sent 000000000000000000000000
     return commentDB.createCollection()
       .then(() => commentDB.deleteAll())
       .then(() => insertMockupData());
@@ -131,7 +149,7 @@ function insertMockupData() {
       title: 'Agreed',
       text: '^^',
       user_id: '112233445566778899000002',
-      parent_comment: ins1.ops[0]._id
+      parent_comment:String(ins1.ops[0]._id)
     };
     let reply2 = {
       content_id: '112233445566778899000671',
@@ -139,8 +157,9 @@ function insertMockupData() {
       title: 'Yeah',
       text: '+1',
       user_id: '112233445566778899000003',
-      parent_comment: ins1.ops[0]._id
+      parent_comment: String(ins1.ops[0]._id)
     };
+
     return commentDB.insert(reply1).then(() => commentDB.insert(reply2));
   });
 
@@ -167,7 +186,7 @@ function insertMockupData() {
       title: 'Nitpicker!',
       text: 'Damn nitpickers, everyone\'s a critic these days!',
       user_id: '112233445566778899000006',
-      parent_comment: ins5.ops[0]._id
+      parent_comment: String(ins5.ops[0]._id)
     };
     return commentDB.insert(reply3);
   });
