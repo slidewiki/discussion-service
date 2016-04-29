@@ -14,8 +14,10 @@ module.exports = {
     commentDB.get(encodeURIComponent(request.params.id)).then((comment) => {
       if (co.isEmpty(comment))
         reply(boom.notFound());
-      else
+      else {
+        comment.author = authorsMap.get(comment.user_id);//insert author data
         reply(co.rewriteID(comment));
+      }
     }).catch((error) => {
 
       request.log('error', error);
@@ -27,10 +29,12 @@ module.exports = {
   newComment: function(request, reply) {
     commentDB.insert(request.payload).then((inserted) => {
       //console.log('inserted: ', inserted);
-      if (co.isEmpty(inserted.ops[0]) || co.isEmpty(inserted.ops[0]))
+      if (co.isEmpty(inserted.ops) || co.isEmpty(inserted.ops[0]))
         throw inserted;
-      else
+      else {
+        inserted.ops[0].author = authorsMap.get(inserted.ops[0].user_id);//insert author data
         reply(co.rewriteID(inserted.ops[0]));
+      }
     }).catch((error) => {
       request.log('error', error);
       reply(boom.badImplementation());
@@ -62,7 +66,6 @@ module.exports = {
   },
 
   deleteDiscussion: function(request, reply) {
-    console.log(request.payload.content_id);
     commentDB.deleteAllWithContentID(encodeURIComponent(request.payload.content_id)).then(() =>
       reply({'msg': 'discussion is successfully deleted...'})
     ).catch((error) => {

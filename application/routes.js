@@ -20,7 +20,7 @@ module.exports = function(server) {
         },
       },
       tags: ['api'],
-      description: 'Get a discussion'
+      description: 'Get a discussion (example id: 112233445566778899000671; id:000000000000000000000000 recreates mockup data)'
     }
   });
 
@@ -99,7 +99,7 @@ module.exports = function(server) {
       description: 'Delete a comment'
     }
   });
-  
+
   server.route({
     method: 'DELETE',
     path: '/discussion/delete',
@@ -111,7 +111,7 @@ module.exports = function(server) {
         },
       },
       tags: ['api'],
-      description: 'Delete a discussion'
+      description: 'Delete a discussion (example id: 112233445566778899000671)'
     }
   });
 };
