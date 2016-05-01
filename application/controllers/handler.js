@@ -93,18 +93,27 @@ module.exports = {
           comment.author = authorsMap.get(comment.user_id);//insert author data
           // comment.date = now - comment.timestamp;//insert date
           //move replies to their places
-          let parent_comment = comment.parent_comment;
-          if (parent_comment !== undefined) {
-            comments.forEach((comment2) => {
-              if (parent_comment.toString() === comment2.id.toString()) {
-
-                if (comment2.replies === undefined) {//add comment to replies
-                  comment2.replies = [];
-                }
-                comment2.replies.push(comment);
-                replies.push(index);
+          let parent_comment_id = comment.parent_comment;
+          if (parent_comment_id !== undefined) {
+            let parentComment = findComment(comments, parent_comment_id);
+            if (parentComment !== null) {//found parent comment
+              if (parentComment.replies === undefined) {//first reply
+                parentComment.replies = [];
               }
-            });
+              parentComment.replies.push(comment);
+              replies.push(index);//remember index, to remove it later
+            }
+
+            // comments.forEach((comment2) => {
+            //   if (parent_comment_id.toString() === comment2.id.toString()) {
+            //
+            //     if (comment2.replies === undefined) {//add comment to replies
+            //       comment2.replies = [];
+            //     }
+            //     comment2.replies.push(comment);
+            //     replies.push(index);
+            //   }
+            // });
           }
         });
 
@@ -124,6 +133,23 @@ module.exports = {
 
   }
 };
+
+//Find comment in a tree with id = identifier
+function findComment(array, identifier) {
+  for(let i = 0; i < array.length; i++) {
+    let comment = array[i];
+    if (String(comment.id) === String(identifier)) {
+      return comment;
+    } else if (comment.replies !== undefined) {
+      let commentFound = findComment(comment.replies, identifier);
+      if (commentFound !== null)
+        return commentFound;
+    }
+  }
+
+  return null;
+}
+
 
 //Delete all and insert mockup data
 function initMockupData(identifier) {
