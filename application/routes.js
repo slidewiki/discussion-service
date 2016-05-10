@@ -85,6 +85,7 @@ module.exports = function(server) {
     }
   });
 
+  //Delete comment with id id (by payload) . Validate payload
   server.route({
     method: 'DELETE',
     path: '/comment/delete',
@@ -100,6 +101,7 @@ module.exports = function(server) {
     }
   });
 
+  //Delete discussion with content id id (by payload) . Validate payload
   server.route({
     method: 'DELETE',
     path: '/discussion/delete',

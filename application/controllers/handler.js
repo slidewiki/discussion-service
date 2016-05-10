@@ -5,7 +5,7 @@ Handles the requests by executing stuff and replying to the client. Uses promise
 'use strict';
 
 const boom = require('boom'), //Boom gives us some predefined http codes and proper responses
-  commentDB = require('../database/commentDatabase'), //Database functions specific for slides
+  commentDB = require('../database/commentDatabase'), //Database functions specific for comments
   co = require('../common');
 
 module.exports = {
@@ -56,6 +56,7 @@ module.exports = {
     });
   },
 
+  //Delete Comment with id id
   deleteComment: function(request, reply) {
     commentDB.delete(encodeURIComponent(request.payload.id)).then(() =>
       reply({'msg': 'comment is successfully deleted...'})
@@ -65,6 +66,7 @@ module.exports = {
     });
   },
 
+  //Delete Discussions with content id id
   deleteDiscussion: function(request, reply) {
     commentDB.deleteAllWithContentID(encodeURIComponent(request.payload.content_id)).then(() =>
       reply({'msg': 'discussion is successfully deleted...'})
@@ -86,6 +88,9 @@ module.exports = {
         comments.forEach((comment) => {
           co.rewriteID(comment);
         });
+
+        //sort by timestamp
+        comments.sort((comment1, comment2) => {return (comment2.timestamp - comment1.timestamp);});
 
         // let now = Date.now();
         let replies = [];
