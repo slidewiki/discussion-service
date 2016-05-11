@@ -90,13 +90,12 @@ module.exports = {
         });
 
         //sort by timestamp
-        comments.sort((comment1, comment2) => {return (comment2.timestamp - comment1.timestamp);});
+        // comments.sort((comment1, comment2) => {return (comment2.timestamp - comment1.timestamp);});
 
-        // let now = Date.now();
         let replies = [];
         comments.forEach((comment, index) => {
           comment.author = authorsMap.get(comment.user_id);//insert author data
-          // comment.date = now - comment.timestamp;//insert date
+
           //move replies to their places
           let parent_comment_id = comment.parent_comment;
           if (parent_comment_id !== undefined) {
@@ -108,17 +107,6 @@ module.exports = {
               parentComment.replies.push(comment);
               replies.push(index);//remember index, to remove it later
             }
-
-            // comments.forEach((comment2) => {
-            //   if (parent_comment_id.toString() === comment2.id.toString()) {
-            //
-            //     if (comment2.replies === undefined) {//add comment to replies
-            //       comment2.replies = [];
-            //     }
-            //     comment2.replies.push(comment);
-            //     replies.push(index);
-            //   }
-            // });
           }
         });
 
