@@ -50,7 +50,7 @@ module.exports = {
           // host: 'proxy.rcub.bg.ac.rs',
           // port: 8080,
           // path: 'http://activitiesservice.manfredfris.ch/activity/new',
-          host: 'http://activitiesservice.manfredfris.ch',
+          host: 'activitiesservice.manfredfris.ch',
           port: 80,
           path: '/activity/new',
           method: 'POST',
