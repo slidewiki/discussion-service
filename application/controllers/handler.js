@@ -62,11 +62,11 @@ module.exports = {
         };
 
         let req = http.request(options, (res) => {
-          console.log('STATUS: ' + res.statusCode);
-          console.log('HEADERS: ' + JSON.stringify(res.headers));
+          // console.log('STATUS: ' + res.statusCode);
+          // console.log('HEADERS: ' + JSON.stringify(res.headers));
           res.setEncoding('utf8');
           res.on('data', (chunk) => {
-            console.log('Response: ', chunk);
+            // console.log('Response: ', chunk);
           });
         });
         req.on('error', (e) => {
