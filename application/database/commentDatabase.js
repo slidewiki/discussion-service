@@ -26,6 +26,14 @@ module.exports = {
       .then((stream) => stream.toArray());
   },
 
+  getAllFromCollection: function() {
+    return helper.connectToDatabase()
+      .then((db) => db.collection(collectionName))
+      .then((col) => col.find())
+      .then((stream) => stream.sort({timestamp: -1}))
+      .then((stream) => stream.toArray());
+  },
+
   insert: function(comment) {
     //TODO check for content and parent comment ids to be existant
     return helper.connectToDatabase()

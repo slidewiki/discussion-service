@@ -24,6 +24,17 @@ module.exports = function(server) {
     }
   });
 
+  //Get all discussions from database and return the entire tree (when not available, return NOT FOUND).
+  server.route({
+    method: 'GET',
+    path: '/alldiscussions',
+    handler: handlers.getAllDiscussions,
+    config: {
+      tags: ['api'],
+      description: 'Get all discussions'
+    }
+  });
+
   //Get comment with id id from database and return it (when not available, return NOT FOUND). Validate id
   server.route({
     method: 'GET',

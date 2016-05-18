@@ -171,6 +171,47 @@ module.exports = {
         reply(boom.badImplementation());
       });
 
+  },
+
+  //Get All Comments from database
+  getAllDiscussions: function(request, reply) {
+    commentDB.getAllFromCollection()
+      .then((comments) => {
+        comments.forEach((comment) => {
+          co.rewriteID(comment);
+        });
+
+        let replies = [];
+        comments.forEach((comment, index) => {
+          comment.author = authorsMap.get(comment.user_id);//insert author data
+
+          //move replies to their places
+          let parent_comment_id = comment.parent_comment;
+          if (parent_comment_id !== undefined) {
+            let parentComment = findComment(comments, parent_comment_id);
+            if (parentComment !== null) {//found parent comment
+              if (parentComment.replies === undefined) {//first reply
+                parentComment.replies = [];
+              }
+              parentComment.replies.push(comment);
+              replies.push(index);//remember index, to remove it later
+            }
+          }
+        });
+
+        //remove comments which were inserted as replies
+        replies.reverse();
+        replies.forEach((i) => {
+          comments.splice(i, 1);
+        });
+
+        let jsonReply = JSON.stringify(comments);
+        reply(jsonReply);
+
+      }).catch((error) => {
+        request.log('error', error);
+        reply(boom.badImplementation());
+      });
   }
 };
 
