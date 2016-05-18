@@ -26,7 +26,7 @@ describe('REST API', () => {
     content_kind: 'slide',
     title: 'Dummy',
     text: 'dummy',
-    user_id: '112233445566778899001213'
+    user_id: '000000000000000000000000'
   };
   let options = {
     method: 'POST',
@@ -47,7 +47,7 @@ describe('REST API', () => {
         let payload = JSON.parse(response.payload);
         payload.should.be.an('object').and.contain.keys('content_id', 'timestamp', 'user_id');
         payload.content_id.should.equal('112233445566778899000671');
-        payload.user_id.should.equal('112233445566778899001213');
+        payload.user_id.should.equal('000000000000000000000000');
         done();
       });
     });

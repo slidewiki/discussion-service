@@ -36,48 +36,52 @@ module.exports = {
         throw inserted;
       else {
         //send request to insert new activity
-        let http = require('http');
-        const activityType = (inserted.ops[0].parent_comment === undefined) ? 'comment' : 'reply';
-        let data = JSON.stringify({
-          activity_type: activityType,
-          user_id: inserted.ops[0].user_id,
-          content_id: inserted.ops[0].content_id,
-          content_kind: inserted.ops[0].content_kind,
-          content_name: 'Introduction (sent from discussion-service)',
-          comment_info: {
-            comment_id: inserted.ops[0]._id,
-            text: inserted.ops[0].title
-          }
-        });
-        let options = {
-          // host: 'proxy.rcub.bg.ac.rs',
-          // port: 8080,
-          // path: 'http://activitiesservice.manfredfris.ch/activity/new',
-          host: 'activitiesservice.manfredfris.ch',
-          port: 80,
-          path: '/activity/new',
-          method: 'POST',
-          headers : {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache',
-            'Content-Length': data.length
-          }
-        };
-
-        let req = http.request(options, (res) => {
-          // console.log('STATUS: ' + res.statusCode);
-          // console.log('HEADERS: ' + JSON.stringify(res.headers));
-          res.setEncoding('utf8');
-          res.on('data', (chunk) => {
-            // console.log('Response: ', chunk);
+        console.log('asdf');
+        if (inserted.ops[0].user_id !== '000000000000000000000000') {//not test initiated
+          console.log('asdf2');
+          let http = require('http');
+          const activityType = (inserted.ops[0].parent_comment === undefined) ? 'comment' : 'reply';
+          let data = JSON.stringify({
+            activity_type: activityType,
+            user_id: inserted.ops[0].user_id,
+            content_id: inserted.ops[0].content_id,
+            content_kind: inserted.ops[0].content_kind,
+            content_name: 'Introduction (sent from discussion-service)',
+            comment_info: {
+              comment_id: inserted.ops[0]._id,
+              text: inserted.ops[0].title
+            }
           });
-        });
-        req.on('error', (e) => {
-          console.log('problem with request: ' + e.message);
-        });
-        req.write(data);
-        req.end();
-        //end of http request to activitiesservice
+          let options = {
+            // host: 'proxy.rcub.bg.ac.rs',
+            // port: 8080,
+            // path: 'http://activitiesservice.manfredfris.ch/activity/new',
+            host: 'activitiesservice.manfredfris.ch',
+            port: 80,
+            path: '/activity/new',
+            method: 'POST',
+            headers : {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache',
+              'Content-Length': data.length
+            }
+          };
+
+          let req = http.request(options, (res) => {
+            // console.log('STATUS: ' + res.statusCode);
+            // console.log('HEADERS: ' + JSON.stringify(res.headers));
+            res.setEncoding('utf8');
+            res.on('data', (chunk) => {
+              // console.log('Response: ', chunk);
+            });
+          });
+          req.on('error', (e) => {
+            console.log('problem with request: ' + e.message);
+          });
+          req.write(data);
+          req.end();
+          //end of http request to activitiesservice
+        }
 
         inserted.ops[0].author = authorsMap.get(inserted.ops[0].user_id);//insert author data
         reply(co.rewriteID(inserted.ops[0]));

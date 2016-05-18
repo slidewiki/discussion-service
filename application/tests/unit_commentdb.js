@@ -33,7 +33,7 @@ describe('Database', () => {
         content_kind: 'slide',
         title: 'Dummy',
         text: 'dummy',
-        user_id: '112233445566778899001213'
+        user_id: '000000000000000000000000'
       };
       let res = db.insert(comment);
       return Promise.all([
@@ -50,7 +50,7 @@ describe('Database', () => {
         content_kind: 'slide',
         title: 'Dummy',
         text: 'dummy',
-        user_id: '112233445566778899001213'
+        user_id: '000000000000000000000000'
       };
       let ins = db.insert(comment);
       let res = ins.then((ins) => db.get(ins.ops[0]._id));
@@ -67,14 +67,14 @@ describe('Database', () => {
         content_kind: 'slide',
         title: 'Dummy',
         text: 'dummy',
-        user_id: '112233445566778899001213'
+        user_id: '000000000000000000000000'
       };
       let comment2 = {
         content_id: '112233445566778899000671',
         content_kind: 'slide',
         title: 'Dummy2',
         text: 'dummy2',
-        user_id: '112233445566778899001213'
+        user_id: '000000000000000000000000'
       };
       let ins = db.insert(comment);
       let res = ins.then((ins) => db.replace(ins.ops[0]._id, comment2));
