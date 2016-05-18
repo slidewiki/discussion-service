@@ -27,7 +27,7 @@ module.exports = function(server) {
   //Get all discussions from database and return the entire tree (when not available, return NOT FOUND).
   server.route({
     method: 'GET',
-    path: '/discussions/all',
+    path: '/discussion/all',
     handler: handlers.getAllDiscussions,
     config: {
       tags: ['api'],
