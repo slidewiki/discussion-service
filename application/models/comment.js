@@ -33,6 +33,9 @@ const comment = {
       type: 'string',
       enum: ['deck', 'slide']
     },
+    is_activity: {
+      type: 'boolean'
+    }
   },
   required: ['content_id', 'user_id']
 };
