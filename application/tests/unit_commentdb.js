@@ -40,7 +40,7 @@ describe('Database', () => {
       return Promise.all([
         res.should.be.fulfilled.and.eventually.not.be.empty,
         res.should.eventually.have.property('ops').that.is.not.empty,
-        res.should.eventually.have.deep.property('ops[0]').that.has.all.keys('_id', 'title', 'text', 'timestamp', 'content_id', 'content_kind', 'user_id'),
+        res.should.eventually.have.deep.property('ops[0]').that.has.all.keys('_id', 'title', 'text', 'timestamp', 'content_id', 'content_kind', 'user_id', 'is_activity'),
         res.should.eventually.have.deep.property('ops[0].title', comment.title)
       ]);
     });
@@ -58,7 +58,7 @@ describe('Database', () => {
       let res = ins.then((ins) => db.get(ins.ops[0]._id));
       return Promise.all([
         res.should.be.fulfilled.and.eventually.not.be.empty,
-        res.should.eventually.have.all.keys('_id', 'title', 'text', 'timestamp', 'content_id', 'content_kind', 'user_id'),
+        res.should.eventually.have.all.keys('_id', 'title', 'text', 'timestamp', 'content_id', 'content_kind', 'user_id', 'is_activity'),
         res.should.eventually.have.property('text', comment.text)
       ]);
     });
@@ -85,7 +85,7 @@ describe('Database', () => {
       res = ins.then((ins) => db.get(ins.ops[0]._id));
       return Promise.all([
         res.should.be.fulfilled.and.eventually.not.be.empty,
-        res.should.eventually.have.all.keys('_id', 'title', 'text', 'timestamp', 'content_id', 'content_kind', 'user_id'),
+        res.should.eventually.have.all.keys('_id', 'title', 'text', 'timestamp', 'content_id', 'content_kind', 'user_id', 'is_activity'),
         res.should.eventually.have.property('title', 'Dummy2')
       ]);
     });
