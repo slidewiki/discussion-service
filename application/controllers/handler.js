@@ -2,8 +2,6 @@
 Handles the requests by executing stuff and replying to the client. Uses promises to get stuff done.
 */
 
-// import {Microservices} from '../configs/microservices';
-
 'use strict';
 
 const boom = require('boom'), //Boom gives us some predefined http codes and proper responses
@@ -13,7 +11,7 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
 //Send request to insert new activity
 function createActivity(comment) {
 
-  if (comment.is_activity === undefined || comment.is_activity === true) {//not test initiated
+  if (comment.is_activity === undefined || comment.is_activity === true) {//if not test initiated
     let http = require('http');
     const activityType = (comment.parent_comment === undefined) ? 'comment' : 'reply';
     let data = JSON.stringify({
@@ -27,13 +25,17 @@ function createActivity(comment) {
         text: comment.title
       }
     });
+
+    const Microservices = require('../configs/microservices');
     let options = {
+      //CHANGES FOR LOCALHOST IN PUPIN (PROXY)
       // host: 'proxy.rcub.bg.ac.rs',
       // port: 8080,
       // path: 'http://activitiesservice.manfredfris.ch/activity/new',
+      // path: 'http://' + Microservices.activities.uri + '/activity/new',
 
-      host: 'activitiesservice.manfredfris.ch',
-      // host: Microservices.activities.uri,
+      // host: 'activitiesservice.manfredfris.ch',
+      host: Microservices.activities.uri,
       port: 80,
       path: '/activity/new',
       method: 'POST',
@@ -83,7 +85,6 @@ module.exports = {
   //Create Comment with new id and payload or return INTERNAL_SERVER_ERROR
   newComment: function(request, reply) {
     commentDB.insert(request.payload).then((inserted) => {
-      //console.log('inserted: ', inserted);
       if (co.isEmpty(inserted.ops) || co.isEmpty(inserted.ops[0]))
         throw inserted;
       else {
@@ -102,7 +103,6 @@ module.exports = {
   //Update Comment with id id and payload or return INTERNAL_SERVER_ERROR
   updateComment: function(request, reply) {
     commentDB.replace(encodeURIComponent(request.params.id), request.payload).then((replaced) => {
-      //console.log('updated: ', replaced);
       if (co.isEmpty(replaced.value))
         throw replaced;
       else
@@ -237,10 +237,8 @@ function findComment(array, identifier) {
         return commentFound;
     }
   }
-
   return null;
 }
-
 
 //Delete all and insert mockup data
 function initMockupData(identifier) {
