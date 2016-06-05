@@ -10,64 +10,62 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
 
 //Send request to insert new activity
 function createActivity(comment) {
-
-  if (comment.is_activity === undefined || comment.is_activity === true) {//if not test initiated
-    let myPromise = new Promise((resolve, reject) => {
-      let http = require('http');
-      const activityType = (comment.parent_comment === undefined) ? 'comment' : 'reply';
-      let data = JSON.stringify({
-        activity_type: activityType,
-        user_id: comment.user_id,
-        content_id: comment.content_id,
-        content_kind: comment.content_kind,
-        content_name: 'Introduction (sent from discussion-service)',
-        comment_info: {
-          comment_id: comment._id,
-          text: comment.title
-        }
-      });
-
-      const Microservices = require('../configs/microservices');
-      let options = {
-        //CHANGES FOR LOCALHOST IN PUPIN (PROXY)
-        // host: 'proxy.rcub.bg.ac.rs',
-        // port: 8080,
-        // path: 'http://activitiesservice.manfredfris.ch/activity/new',
-        // path: 'http://' + Microservices.activities.uri + '/activity/new',
-
-        // host: 'activitiesservice.manfredfris.ch',
-        host: Microservices.activities.uri,
-        port: 80,
-        path: '/activity/new',
-        method: 'POST',
-        headers : {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache',
-          'Content-Length': data.length
-        }
-      };
-
-      let req = http.request(options, (res) => {
-        // console.log('STATUS: ' + res.statusCode);
-        // console.log('HEADERS: ' + JSON.stringify(res.headers));
-        res.setEncoding('utf8');
-        res.on('data', (chunk) => {
-          // console.log('Response: ', chunk);
-          let newActivity = JSON.parse(chunk);
-
-          resolve(newActivity);
-        });
-      });
-      req.on('error', (e) => {
-        console.log('problem with request: ' + e.message);
-        reject(e);
-      });
-      req.write(data);
-      req.end();
+  let myPromise = new Promise((resolve, reject) => {
+    let http = require('http');
+    const activityType = (comment.parent_comment === undefined) ? 'comment' : 'reply';
+    let data = JSON.stringify({
+      activity_type: activityType,
+      user_id: comment.user_id,
+      content_id: comment.content_id,
+      content_kind: comment.content_kind,
+      content_name: 'Introduction (sent from discussion-service)',
+      comment_info: {
+        comment_id: comment._id,
+        text: comment.title
+      }
     });
 
-    return myPromise;
-  }
+    const Microservices = require('../configs/microservices');
+    let options = {
+      //CHANGES FOR LOCALHOST IN PUPIN (PROXY)
+      // host: 'proxy.rcub.bg.ac.rs',
+      // port: 8080,
+      // path: 'http://activitiesservice.manfredfris.ch/activity/new',
+      // path: 'http://' + Microservices.activities.uri + '/activity/new',
+
+      // host: 'activitiesservice.manfredfris.ch',
+      host: Microservices.activities.uri,
+      port: 80,
+      path: '/activity/new',
+      method: 'POST',
+      headers : {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Content-Length': data.length
+      }
+    };
+
+    let req = http.request(options, (res) => {
+      // console.log('STATUS: ' + res.statusCode);
+      // console.log('HEADERS: ' + JSON.stringify(res.headers));
+      res.setEncoding('utf8');
+      res.on('data', (chunk) => {
+        // console.log('Response: ', chunk);
+        let newActivity = JSON.parse(chunk);
+
+        resolve(newActivity);
+      });
+    });
+    req.on('error', (e) => {
+      console.log('problem with request: ' + e.message);
+      reject(e);
+    });
+    req.write(data);
+    req.end();
+  });
+
+  return myPromise;
+
 }
 
 //Send request to insert new notification
@@ -146,17 +144,20 @@ module.exports = {
       if (co.isEmpty(inserted.ops) || co.isEmpty(inserted.ops[0]))
         throw inserted;
       else {
-        createActivity(inserted.ops[0]).then((activity) => {
-          createNotification(activity);
-        }).catch((error) => {
-          request.log('error', error);
-          reply(boom.badImplementation());
-        });
+        if (inserted.ops[0].is_activity === undefined || inserted.ops[0].is_activity === true) {//insert activity if not test initiated
+          createActivity(inserted.ops[0]).then((activity) => {
+            createNotification(activity);
+          }).catch((error) => {
+            request.log('error', error);
+            reply(boom.badImplementation());
+          });
+        }
 
         inserted.ops[0].author = authorsMap.get(inserted.ops[0].user_id);//insert author data
         reply(co.rewriteID(inserted.ops[0]));
       }
     }).catch((error) => {
+      console.log(error);
       request.log('error', error);
       reply(boom.badImplementation());
     });
