@@ -18,7 +18,7 @@ function createActivity(comment) {
       user_id: comment.user_id,
       content_id: comment.content_id,
       content_kind: comment.content_kind,
-      content_name: 'Introduction (sent from discussion-service)',
+      content_name: slideNameMap.get(comment.content_id),//TODO get real content_name
       comment_info: {
         comment_id: comment._id,
         text: comment.title
@@ -73,50 +73,52 @@ function createNotification(activity) {
   let http = require('http');
 
   //TODO find list of subscribed users
+  if (activity.content_id === '575060ae4bc68d1000ea952b') {//current dummy user is subscribed to this content_id
 
-  let notification = activity;
-  notification.subscribed_user_id = '112233445566778899000001';
-  notification.activity_id = activity.id;
+    let notification = activity;
+    notification.subscribed_user_id = '112233445566778899000001';
+    notification.activity_id = activity.id;
 
-  delete notification.timestamp;
-  delete notification.author;
-  delete notification.id;
+    delete notification.timestamp;
+    delete notification.author;
+    delete notification.id;
 
-  let data = JSON.stringify(activity);
-  const Microservices = require('../configs/microservices');
-  let options = {
-    //CHANGES FOR LOCALHOST IN PUPIN (PROXY)
-    // host: 'proxy.rcub.bg.ac.rs',
-    // port: 8080,
-    // path: 'http://activitiesservice.manfredfris.ch/activity/new',
-    // path: 'http://' + Microservices.activities.uri + '/activity/new',
+    let data = JSON.stringify(activity);
+    const Microservices = require('../configs/microservices');
+    let options = {
+      //CHANGES FOR LOCALHOST IN PUPIN (PROXY)
+      // host: 'proxy.rcub.bg.ac.rs',
+      // port: 8080,
+      // path: 'http://activitiesservice.manfredfris.ch/activity/new',
+      // path: 'http://' + Microservices.activities.uri + '/activity/new',
 
-    // host: 'activitiesservice.manfredfris.ch',
-    host: Microservices.notification.uri,
-    port: 80,
-    path: '/notification/new',
-    method: 'POST',
-    headers : {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-cache',
-      'Content-Length': data.length
-    }
-  };
+      // host: 'activitiesservice.manfredfris.ch',
+      host: Microservices.notification.uri,
+      port: 80,
+      path: '/notification/new',
+      method: 'POST',
+      headers : {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Content-Length': data.length
+      }
+    };
 
-  let req = http.request(options, (res) => {
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    res.setEncoding('utf8');
-    res.on('data', (chunk) => {
-      // console.log('Response: ', chunk);
+    let req = http.request(options, (res) => {
+      // console.log('STATUS: ' + res.statusCode);
+      // console.log('HEADERS: ' + JSON.stringify(res.headers));
+      res.setEncoding('utf8');
+      res.on('data', (chunk) => {
+        // console.log('Response: ', chunk);
 
+      });
     });
-  });
-  req.on('error', (e) => {
-    console.log('problem with request: ' + e.message);
-  });
-  req.write(data);
-  req.end();
+    req.on('error', (e) => {
+      console.log('problem with request: ' + e.message);
+    });
+    req.write(data);
+    req.end();
+  }
 }
 
 module.exports = {
@@ -317,7 +319,7 @@ function initMockupData(identifier) {
 //Insert mockup data to the collection
 function insertMockupData() {
   let comment1 = {
-    content_id: '112233445566778899000671',
+    content_id: '575060ae4bc68d1000ea952b',
     content_kind: 'slide',
     title: 'Congrats',
     text: 'Kudos, very good presentation, I\'ll spread the word!',
@@ -326,7 +328,7 @@ function insertMockupData() {
   let ins1 = commentDB.insert(comment1);
   let ins2 = ins1.then((ins1) => {
     let reply1 = {
-      content_id: '112233445566778899000671',
+      content_id: '575060ae4bc68d1000ea952b',
       content_kind: 'slide',
       title: 'Agreed',
       text: '^^',
@@ -334,7 +336,7 @@ function insertMockupData() {
       parent_comment:String(ins1.ops[0]._id)
     };
     let reply2 = {
-      content_id: '112233445566778899000671',
+      content_id: '575060ae4bc68d1000ea952b',
       content_kind: 'slide',
       title: 'Yeah',
       text: '+1',
@@ -346,7 +348,7 @@ function insertMockupData() {
   });
 
   let comment2 = {
-    content_id: '112233445566778899000671',
+    content_id: '575060ae4bc68d1000ea952b',
     content_kind: 'slide',
     title: 'Simply the best',
     text: 'The best presentation I have seen so far on this subject',
@@ -354,7 +356,7 @@ function insertMockupData() {
   };
   let ins4 = ins2.then(() => commentDB.insert(comment2));
   let comment3 = {
-    content_id: '112233445566778899000671',
+    content_id: '575060ae4bc68d1000ea952b',
     content_kind: 'slide',
     title: 'Keep up the good work',
     text: 'Slide 54 could use some more details.\nGreat presentation though, keep on truckin!',
@@ -363,7 +365,7 @@ function insertMockupData() {
   let ins5 = ins4.then(() => commentDB.insert(comment3));
   return ins5.then((ins5) => {
     let reply3 = {
-      content_id: '112233445566778899000671',
+      content_id: '575060ae4bc68d1000ea952b',
       content_kind: 'slide',
       title: 'Nitpicker!',
       text: 'Damn nitpickers, everyone\'s a critic these days!',
@@ -410,4 +412,23 @@ let authorsMap = new Map([
     username: 'Dutch',
     avatar: '/assets/images/mock-avatars/dgirl.jpeg'
   }]
+]);
+
+let slideNameMap = new Map([
+  ['56', 'Semantic Web'],
+  ['575060ae4bc68d1000ea952b', 'Introduction'],
+  ['67', 'RDF Data Model'],
+  ['57506cbd1ae1bd1000312a70', 'Introduction'],
+  ['575039f24bc68d1000ea9525', 'Serialization'],
+  ['57503dc14bc68d1000ea9526', 'Examples'],
+  ['68', 'SPARQL'],
+  ['685', 'Syntax'],
+  ['57505e034bc68d1000ea9527', 'Same Slide'],
+  ['57505eec4bc68d1000ea952a', 'Same Slide'],
+  ['57505e674bc68d1000ea9529', 'Examples'],
+  ['574f2bbf81e34010002b7fda', 'Conclusion'],
+  ['574f2b2881e34010002b7fd8', 'Future Work'],
+  ['574f24e881e34010002b7fd4', 'References'],
+  ['574f251081e34010002b7fd6', 'Extra1'],
+
 ]);
