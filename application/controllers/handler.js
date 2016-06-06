@@ -309,7 +309,9 @@ function findComment(array, identifier) {
 //Delete all and insert mockup data
 function initMockupData(identifier) {
   if (identifier === '000000000000000000000000') {//create collection, delete all and insert mockup data only if the user has explicitly sent 000000000000000000000000
-    return insertMockupData();
+    return commentDB.createCollection()
+      .then(() => commentDB.deleteAll())
+      .then(() => insertMockupData());
   }
   return new Promise((resolve) => {resolve (1);});
 }
