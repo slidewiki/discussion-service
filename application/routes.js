@@ -20,7 +20,7 @@ module.exports = function(server) {
         },
       },
       tags: ['api'],
-      description: 'Get a discussion (example id: 112233445566778899000671; id:000000000000000000000000 recreates mockup data)'
+      description: 'Get a discussion (example id: 575060ae4bc68d1000ea952b; id:000000000000000000000000 recreates mockup data)'
     }
   });
 
@@ -126,7 +126,7 @@ module.exports = function(server) {
         },
       },
       tags: ['api'],
-      description: 'Delete a discussion (example id: 112233445566778899000671)'
+      description: 'Delete a discussion (example id: 575060ae4bc68d1000ea952b)'
     }
   });
 };

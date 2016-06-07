@@ -379,22 +379,22 @@ function insertMockupData() {
 let authorsMap = new Map([
   ['112233445566778899000001', {
     id: 7,
-    username: 'Vuk M.',
+    username: 'Dejan P.',
     avatar: '/assets/images/mock-avatars/deadpool_256.png'
   }],
   ['112233445566778899000002', {
     id: 8,
-    username: 'Dejan P.',
+    username: 'Nikola T.',
     avatar: '/assets/images/mock-avatars/man_512.png'
   }],
   ['112233445566778899000003', {
     id: 9,
-    username: 'Nikola T.',
+    username: 'Marko B.',
     avatar: '/assets/images/mock-avatars/batman_512.jpg'
   }],
   ['112233445566778899000004', {
     id: 10,
-    username: 'Marko B.',
+    username: 'Valentina J.',
     avatar: '/assets/images/mock-avatars/ninja-simple_512.png'
   }],
   ['112233445566778899000005', {
@@ -413,7 +413,6 @@ let authorsMap = new Map([
     avatar: '/assets/images/mock-avatars/dgirl.jpeg'
   }]
 ]);
-
 let slideNameMap = new Map([
   ['56', 'Semantic Web'],
   ['575060ae4bc68d1000ea952b', 'Introduction'],
