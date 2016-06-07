@@ -414,14 +414,14 @@ let authorsMap = new Map([
   }]
 ]);
 let slideNameMap = new Map([
-  ['56', 'Semantic Web'],
+  ['112233445566778899000056', 'Semantic Web'],
   ['575060ae4bc68d1000ea952b', 'Introduction'],
-  ['67', 'RDF Data Model'],
+  ['112233445566778899000067', 'RDF Data Model'],
   ['57506cbd1ae1bd1000312a70', 'Introduction'],
   ['575039f24bc68d1000ea9525', 'Serialization'],
   ['57503dc14bc68d1000ea9526', 'Examples'],
-  ['68', 'SPARQL'],
-  ['685', 'Syntax'],
+  ['112233445566778899000068', 'SPARQL'],
+  ['112233445566778899000685', 'Syntax'],
   ['57505e034bc68d1000ea9527', 'Same Slide'],
   ['57505eec4bc68d1000ea952a', 'Same Slide'],
   ['57505e674bc68d1000ea9529', 'Examples'],
