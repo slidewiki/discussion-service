@@ -27,6 +27,14 @@ describe('Database', () => {
       return db.get('asd7db2daasd').should.be.fulfilled.and.become(null);
     });
 
+    it('should return empty array when requesting a discussion for non existant content', () => {
+      return db.getAll('asd7db2daasd').should.be.fulfilled.and.become([]);
+    });
+
+    it('should return empty array when requesting all comments in the collection', () => {
+      return db.getAllFromCollection().should.be.fulfilled.and.become([]);
+    });
+
     it('should return the comment when inserting one', () => {
       let comment = {
         content_id: '112233445566778899000671',
@@ -63,7 +71,7 @@ describe('Database', () => {
       ]);
     });
 
-    it('should be able to replace an previously inserted comment', () => {
+    it('should be able to replace a previously inserted comment', () => {
       let comment = {
         content_id: '112233445566778899000671',
         content_kind: 'slide',
@@ -88,6 +96,21 @@ describe('Database', () => {
         res.should.eventually.have.all.keys('_id', 'title', 'text', 'timestamp', 'content_id', 'content_kind', 'user_id', 'is_activity'),
         res.should.eventually.have.property('title', 'Dummy2')
       ]);
+    });
+
+    it('should be able to delete a previously inserted comment', () => {
+      let comment = {
+        content_id: '112233445566778899000671',
+        content_kind: 'slide',
+        title: 'Dummy',
+        text: 'dummy',
+        user_id: '000000000000000000000000',
+        is_activity: false
+      };
+
+      let ins = db.insert(comment);
+      let res = ins.then((ins) => db.delete(ins.ops[0]._id));
+      return ins.then((ins) => db.get(ins.ops[0]._id)).should.be.fulfilled.and.become(null);
     });
   });
 });
