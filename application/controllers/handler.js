@@ -15,14 +15,14 @@ function createActivity(comment) {
     const activityType = (comment.parent_comment === undefined) ? 'comment' : 'reply';
     let contentName = slideNameMap.get(comment.content_id.split('-')[0]);//remove revision version
     if (contentName === undefined) {//TODO get real content_name
-      contentName = "Introduction";
-    ]
+      contentName = 'Introduction';
+    }
     let data = JSON.stringify({
       activity_type: activityType,
       user_id: comment.user_id,
       content_id: comment.content_id,
       content_kind: comment.content_kind,
-      content_name: ,contentName
+      content_name: contentName,
       comment_info: {
         comment_id: comment._id,
         text: comment.title
@@ -417,6 +417,7 @@ let authorsMap = new Map([
     avatar: '/assets/images/mock-avatars/dgirl.jpeg'
   }]
 ]);
+
 let slideNameMap = new Map([
   ['7', 'SlideWiki Documentation'],
   ['8', 'Introduction'],
@@ -439,7 +440,5 @@ let slideNameMap = new Map([
   ['24', 'Structuring a presentation'],
   ['25', 'Questionnaires'],
   ['26', 'Questionnaires'],
-  ['27', 'Supporting Organizations'],
-
-
+  ['27', 'Supporting Organizations']
 ]);
