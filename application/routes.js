@@ -16,11 +16,11 @@ module.exports = function(server) {
     config: {
       validate: {
         params: {
-          id: Joi.string().alphanum().lowercase()
+          id: Joi.string()
         },
       },
       tags: ['api'],
-      description: 'Get a discussion (example id: 575060ae4bc68d1000ea952b; id:000000000000000000000000 recreates mockup data)'
+      description: 'Get a discussion (example id: 8; id:000000000000000000000000 recreates mockup data)'
     }
   });
 
@@ -43,7 +43,7 @@ module.exports = function(server) {
     config: {
       validate: {
         params: {
-          id: Joi.string().alphanum().lowercase()
+          id: Joi.string()
         },
       },
       tags: ['api'],
@@ -61,10 +61,10 @@ module.exports = function(server) {
         payload: Joi.object().keys({
           title: Joi.string(),
           text: Joi.string(),
-          user_id: Joi.string().alphanum().lowercase(),
-          content_id: Joi.string().alphanum().lowercase(),
+          user_id: Joi.string(),
+          content_id: Joi.string(),
           content_kind: Joi.string().valid('deck', 'slide'),
-          parent_comment: Joi.string().alphanum().lowercase(),
+          parent_comment: Joi.string(),
           is_activity: Joi.boolean()
         }).requiredKeys('content_id', 'user_id'),
       },
@@ -86,10 +86,10 @@ module.exports = function(server) {
         payload: Joi.object().keys({
           title: Joi.string(),
           text: Joi.string(),
-          user_id: Joi.string().alphanum().lowercase(),
-          content_id: Joi.string().alphanum().lowercase(),
+          user_id: Joi.string(),
+          content_id: Joi.string(),
           content_kind: Joi.string().valid('deck', 'slide'),
-          parent_comment: Joi.string().alphanum().lowercase(),
+          parent_comment: Joi.string(),
           is_activity: Joi.boolean()
         }).requiredKeys('content_id', 'user_id'),
       },
@@ -106,7 +106,7 @@ module.exports = function(server) {
     config: {
       validate: {
         payload: {
-          id: Joi.string().alphanum().lowercase()
+          id: Joi.string()
         },
       },
       tags: ['api'],
@@ -122,11 +122,11 @@ module.exports = function(server) {
     config: {
       validate: {
         payload: {
-          content_id: Joi.string().alphanum().lowercase()
+          content_id: Joi.string()
         },
       },
       tags: ['api'],
-      description: 'Delete a discussion (example id: 575060ae4bc68d1000ea952b)'
+      description: 'Delete a discussion (example id: 8)'
     }
   });
 };

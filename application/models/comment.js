@@ -28,7 +28,9 @@ const comment = {
     },
     user_id: objectid,
     parent_comment: objectid,
-    content_id: objectid,
+    content_id: {
+      type: 'string'
+    },
     content_kind: {
       type: 'string',
       enum: ['deck', 'slide']

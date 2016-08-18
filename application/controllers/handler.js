@@ -13,12 +13,16 @@ function createActivity(comment) {
   let myPromise = new Promise((resolve, reject) => {
     let http = require('http');
     const activityType = (comment.parent_comment === undefined) ? 'comment' : 'reply';
+    let contentName = slideNameMap.get(comment.content_id.split('-')[0]);//remove revision version
+    if (contentName === undefined) {//TODO get real content_name
+      contentName = "Introduction";
+    ]
     let data = JSON.stringify({
       activity_type: activityType,
       user_id: comment.user_id,
       content_id: comment.content_id,
       content_kind: comment.content_kind,
-      content_name: slideNameMap.get(comment.content_id),//TODO get real content_name
+      content_name: ,contentName
       comment_info: {
         comment_id: comment._id,
         text: comment.title
@@ -73,7 +77,7 @@ function createNotification(activity) {
   let http = require('http');
 
   //TODO find list of subscribed users
-  if (activity.content_id === '575060ae4bc68d1000ea952b') {//current dummy user is subscribed to this content_id
+  if (activity.content_id === '8') {//current dummy user is subscribed to this content_id
 
     let notification = activity;
     notification.subscribed_user_id = '112233445566778899000001';
@@ -319,7 +323,7 @@ function initMockupData(identifier) {
 //Insert mockup data to the collection
 function insertMockupData() {
   let comment1 = {
-    content_id: '575060ae4bc68d1000ea952b',
+    content_id: '8',
     content_kind: 'slide',
     title: 'Congrats',
     text: 'Kudos, very good presentation, I\'ll spread the word!',
@@ -328,7 +332,7 @@ function insertMockupData() {
   let ins1 = commentDB.insert(comment1);
   let ins2 = ins1.then((ins1) => {
     let reply1 = {
-      content_id: '575060ae4bc68d1000ea952b',
+      content_id: '8',
       content_kind: 'slide',
       title: 'Agreed',
       text: '^^',
@@ -336,7 +340,7 @@ function insertMockupData() {
       parent_comment:String(ins1.ops[0]._id)
     };
     let reply2 = {
-      content_id: '575060ae4bc68d1000ea952b',
+      content_id: '8',
       content_kind: 'slide',
       title: 'Yeah',
       text: '+1',
@@ -348,7 +352,7 @@ function insertMockupData() {
   });
 
   let comment2 = {
-    content_id: '575060ae4bc68d1000ea952b',
+    content_id: '8',
     content_kind: 'slide',
     title: 'Simply the best',
     text: 'The best presentation I have seen so far on this subject',
@@ -356,7 +360,7 @@ function insertMockupData() {
   };
   let ins4 = ins2.then(() => commentDB.insert(comment2));
   let comment3 = {
-    content_id: '575060ae4bc68d1000ea952b',
+    content_id: '8',
     content_kind: 'slide',
     title: 'Keep up the good work',
     text: 'Slide 54 could use some more details.\nGreat presentation though, keep on truckin!',
@@ -365,7 +369,7 @@ function insertMockupData() {
   let ins5 = ins4.then(() => commentDB.insert(comment3));
   return ins5.then((ins5) => {
     let reply3 = {
-      content_id: '575060ae4bc68d1000ea952b',
+      content_id: '8',
       content_kind: 'slide',
       title: 'Nitpicker!',
       text: 'Damn nitpickers, everyone\'s a critic these days!',
@@ -414,20 +418,28 @@ let authorsMap = new Map([
   }]
 ]);
 let slideNameMap = new Map([
-  ['112233445566778899000056', 'Semantic Web'],
-  ['575060ae4bc68d1000ea952b', 'Introduction'],
-  ['112233445566778899000067', 'RDF Data Model'],
-  ['57506cbd1ae1bd1000312a70', 'Introduction'],
-  ['575039f24bc68d1000ea9525', 'Serialization'],
-  ['57503dc14bc68d1000ea9526', 'Examples'],
-  ['112233445566778899000068', 'SPARQL'],
-  ['112233445566778899000685', 'Syntax'],
-  ['57505e034bc68d1000ea9527', 'Same Slide'],
-  ['57505eec4bc68d1000ea952a', 'Same Slide'],
-  ['57505e674bc68d1000ea9529', 'Examples'],
-  ['574f2bbf81e34010002b7fda', 'Conclusion'],
-  ['574f2b2881e34010002b7fd8', 'Future Work'],
-  ['574f24e881e34010002b7fd4', 'References'],
-  ['574f251081e34010002b7fd6', 'Extra1'],
+  ['7', 'SlideWiki Documentation'],
+  ['8', 'Introduction'],
+  ['14', 'Motivation'],
+  ['16', 'SlideWiki for Humanity'],
+  ['17', 'Feature Overview'],
+  ['18', 'How is SlideWiki different?'],
+  ['9', 'Collaborative authoring of presentations'],
+  ['10', 'Revisioning'],
+  ['11', 'Persistent URL Scheme'],
+  ['153', 'Test'],
+  ['19', 'Visibility, Licensing and Attribution'],
+  ['20', 'Editor Groups'],
+  ['36', 'Other features'],
+  ['37', 'others'],
+  ['43', 'others2'],
+  ['34', 'Branching'],
+  ['35', 'Branching'],
+  ['23', 'Slide editing'],
+  ['24', 'Structuring a presentation'],
+  ['25', 'Questionnaires'],
+  ['26', 'Questionnaires'],
+  ['27', 'Supporting Organizations'],
+
 
 ]);
