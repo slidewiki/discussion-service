@@ -77,7 +77,7 @@ function createNotification(activity) {
   let http = require('http');
 
   //TODO find list of subscribed users
-  if (activity.content_id === '8') {//current dummy user is subscribed to this content_id
+  if (activity.content_id.split('-')[0] === '8') {//current dummy user is subscribed to this content_id
 
     let notification = activity;
     notification.subscribed_user_id = '112233445566778899000001';
@@ -323,7 +323,7 @@ function initMockupData(identifier) {
 //Insert mockup data to the collection
 function insertMockupData() {
   let comment1 = {
-    content_id: '8',
+    content_id: '8-1',
     content_kind: 'slide',
     title: 'Congrats',
     text: 'Kudos, very good presentation, I\'ll spread the word!',
@@ -332,7 +332,7 @@ function insertMockupData() {
   let ins1 = commentDB.insert(comment1);
   let ins2 = ins1.then((ins1) => {
     let reply1 = {
-      content_id: '8',
+      content_id: '8-1',
       content_kind: 'slide',
       title: 'Agreed',
       text: '^^',
@@ -340,7 +340,7 @@ function insertMockupData() {
       parent_comment:String(ins1.ops[0]._id)
     };
     let reply2 = {
-      content_id: '8',
+      content_id: '8-1',
       content_kind: 'slide',
       title: 'Yeah',
       text: '+1',
@@ -352,7 +352,7 @@ function insertMockupData() {
   });
 
   let comment2 = {
-    content_id: '8',
+    content_id: '8-1',
     content_kind: 'slide',
     title: 'Simply the best',
     text: 'The best presentation I have seen so far on this subject',
@@ -360,7 +360,7 @@ function insertMockupData() {
   };
   let ins4 = ins2.then(() => commentDB.insert(comment2));
   let comment3 = {
-    content_id: '8',
+    content_id: '8-1',
     content_kind: 'slide',
     title: 'Keep up the good work',
     text: 'Slide 54 could use some more details.\nGreat presentation though, keep on truckin!',
@@ -369,7 +369,7 @@ function insertMockupData() {
   let ins5 = ins4.then(() => commentDB.insert(comment3));
   return ins5.then((ins5) => {
     let reply3 = {
-      content_id: '8',
+      content_id: '8-1',
       content_kind: 'slide',
       title: 'Nitpicker!',
       text: 'Damn nitpickers, everyone\'s a critic these days!',
