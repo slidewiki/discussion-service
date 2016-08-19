@@ -135,5 +135,27 @@ describe('Database', () => {
       let res2 = res.then((res) => db.deleteAllWithContentID('112233445566778899000671'));
       return res2.then((res2) => db.getAll('112233445566778899000671')).should.be.fulfilled.and.become([]);
     });
+    it('should be able to delete all comments from the collection', () => {
+      let comment = {
+        content_id: '112233445566778899000671',
+        content_kind: 'slide',
+        title: 'Dummy',
+        text: 'dummy',
+        user_id: '000000000000000000000000',
+        is_activity: false
+      };
+      let comment2 = {
+        content_id: '112233445566778899000671',
+        content_kind: 'slide',
+        title: 'Dummy2',
+        text: 'dummy2',
+        user_id: '000000000000000000000000',
+        is_activity: false
+      };
+      let ins = db.insert(comment);
+      let res = ins.then((ins) => db.insert(comment2));
+      let res2 = res.then((res) => db.deleteAll());
+      return res2.then((res2) => db.getAllFromCollection()).should.be.fulfilled.and.become([]);
+    });
   });
 });
