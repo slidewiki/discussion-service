@@ -128,7 +128,7 @@ function createNotification(activity) {
 module.exports = {
   //Get Comment from database or return NOT FOUND
   getComment: function(request, reply) {
-    commentDB.get(encodeURIComponent(request.params.id)).then((comment) => {
+    return commentDB.get(encodeURIComponent(request.params.id)).then((comment) => {
       if (co.isEmpty(comment))
         reply(boom.notFound());
       else {
@@ -146,7 +146,7 @@ module.exports = {
 
   //Create Comment with new id and payload or return INTERNAL_SERVER_ERROR
   newComment: function(request, reply) {
-    commentDB.insert(request.payload).then((inserted) => {
+    return commentDB.insert(request.payload).then((inserted) => {
       if (co.isEmpty(inserted.ops) || co.isEmpty(inserted.ops[0]))
         throw inserted;
       else {
@@ -172,7 +172,7 @@ module.exports = {
 
   //Update Comment with id id and payload or return INTERNAL_SERVER_ERROR
   updateComment: function(request, reply) {
-    commentDB.replace(encodeURIComponent(request.params.id), request.payload).then((replaced) => {
+    return commentDB.replace(encodeURIComponent(request.params.id), request.payload).then((replaced) => {
       if (co.isEmpty(replaced.value))
         throw replaced;
       else
@@ -185,7 +185,7 @@ module.exports = {
 
   //Delete Comment with id id
   deleteComment: function(request, reply) {
-    commentDB.delete(encodeURIComponent(request.payload.id)).then(() =>
+    return commentDB.delete(encodeURIComponent(request.payload.id)).then(() =>
       reply({'msg': 'comment is successfully deleted...'})
     ).catch((error) => {
       request.log('error', error);
@@ -195,7 +195,7 @@ module.exports = {
 
   //Delete Discussions with content id id
   deleteDiscussion: function(request, reply) {
-    commentDB.deleteAllWithContentID(encodeURIComponent(request.payload.content_id)).then(() =>
+    return commentDB.deleteAllWithContentID(encodeURIComponent(request.payload.content_id)).then(() =>
       reply({'msg': 'discussion is successfully deleted...'})
     ).catch((error) => {
       request.log('error', error);
@@ -206,7 +206,7 @@ module.exports = {
   //Get All Comments from database for the id in the request
   getDiscussion: function(request, reply) {
     //Clean collection and insert mockup comments - only if request.params.id === 0
-    initMockupData(request.params.id)
+    return initMockupData(request.params.id)
       .then(() => commentDB.getAll(encodeURIComponent(request.params.id))
       .then((comments) => {
         // if (co.isEmpty(comments))
@@ -255,7 +255,7 @@ module.exports = {
 
   //Get All Comments from database
   getAllDiscussions: function(request, reply) {
-    commentDB.getAllFromCollection()
+    return commentDB.getAllFromCollection()
       .then((comments) => {
         comments.forEach((comment) => {
           co.rewriteID(comment);
