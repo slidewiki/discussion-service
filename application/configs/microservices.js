@@ -6,5 +6,11 @@ module.exports = {
   },
   'notification': {
     uri: 'notificationservice.manfredfris.ch'
+  },
+  'user': {
+    uri: 'userservice.manfredfris.ch'
+  },
+  'deck': {
+    uri: 'deckservice.manfredfris.ch'
   }
 };

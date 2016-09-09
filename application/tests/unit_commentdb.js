@@ -98,6 +98,21 @@ describe('Database', () => {
       ]);
     });
 
+    it('should be able to get the discussion count', () => {
+      let content_id = '112233445566778899000671';
+      let content_kind = 'slide';
+      let comment = {
+        content_id: content_id,
+        content_kind: content_kind,
+        title: 'Dummy',
+        text: 'dummy',
+        user_id: '000000000000000000000000',
+        is_activity: false
+      };
+      let ins = db.insert(comment);
+      return ins.then(() => db.getCount(content_kind, content_id)).should.be.fulfilled.and.become(1);
+    });
+
     it('should be able to delete a previously inserted comment', () => {
       let comment = {
         content_id: '112233445566778899000671',

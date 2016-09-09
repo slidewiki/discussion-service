@@ -18,12 +18,18 @@ module.exports = {
       }));
   },
 
-  getAll: function(identifier) {
+  getAll: function(content_kind, identifier) {
     return helper.connectToDatabase()
       .then((db) => db.collection(collectionName))
-      .then((col) => col.find({ content_id: identifier }))
+      .then((col) => col.find({content_kind: content_kind, content_id: identifier }))
       .then((stream) => stream.sort({timestamp: -1}))
       .then((stream) => stream.toArray());
+  },
+
+  getCount: function(content_kind, identifier) {
+    return helper.connectToDatabase()
+      .then((db) => db.collection(collectionName))
+      .then((col) => col.count({content_kind: content_kind, content_id: identifier }));
   },
 
   getAllFromCollection: function() {

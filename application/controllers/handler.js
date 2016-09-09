@@ -8,15 +8,17 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   commentDB = require('../database/commentDatabase'), //Database functions specific for comments
   co = require('../common');
 
+const Microservices = require('../configs/microservices');
+let http = require('http');
 //Send request to insert new activity
-function createActivity(comment) {
+function createActivity(comment, contentName) {
   let myPromise = new Promise((resolve, reject) => {
-    let http = require('http');
     const activityType = (comment.parent_comment === undefined) ? 'comment' : 'reply';
-    let contentName = slideNameMap.get(comment.content_id.split('-')[0]);//remove revision version
-    if (contentName === undefined) {//TODO get real content_name
-      contentName = 'Introduction';
-    }
+    const commentId = comment._id ? comment._id : comment.id;//co.rewriteID(comment) might be executing at the same time
+    // let contentName = slideNameMap.get(comment.content_id.split('-')[0]);//remove revision version
+    // if (contentName === undefined) {//TODO get real content_name
+    //   contentName = 'Introduction';
+    // }
     let data = JSON.stringify({
       activity_type: activityType,
       user_id: comment.user_id,
@@ -24,12 +26,11 @@ function createActivity(comment) {
       content_kind: comment.content_kind,
       content_name: contentName,
       comment_info: {
-        comment_id: comment._id,
+        comment_id: commentId,
         text: comment.title
       }
     });
 
-    const Microservices = require('../configs/microservices');
     let options = {
       //CHANGES FOR LOCALHOST IN PUPIN (PROXY)
       // host: 'proxy.rcub.bg.ac.rs',
@@ -74,8 +75,6 @@ function createActivity(comment) {
 
 //Send request to insert new notification
 function createNotification(activity) {
-  let http = require('http');
-
   //TODO find list of subscribed users
   if (activity.content_id.split('-')[0] === '8') {//current dummy user is subscribed to this content_id
 
@@ -88,7 +87,6 @@ function createNotification(activity) {
     delete notification.id;
 
     let data = JSON.stringify(activity);
-    const Microservices = require('../configs/microservices');
     let options = {
       //CHANGES FOR LOCALHOST IN PUPIN (PROXY)
       // host: 'proxy.rcub.bg.ac.rs',
@@ -132,11 +130,17 @@ module.exports = {
       if (co.isEmpty(comment))
         reply(boom.notFound());
       else {
-        comment.author = authorsMap.get(comment.user_id);//insert author data
-        if (comment.author === undefined) {
-          comment.author = authorsMap.get('112233445566778899000000');
-        }
-        reply(co.rewriteID(comment));
+        return insertAuthor(comment).then((comment) => {
+
+          if (comment.user_id.length === 24) {//Mockup - old kind of ids
+            comment.author = getMockupAuthor(comment.user_id);//insert author data
+          }
+
+          reply(co.rewriteID(comment));
+        }).catch((error) => {
+          request.log('error', error);
+          reply(boom.badImplementation());
+        });
       }
     }).catch((error) => {
       request.log('error', error);
@@ -151,19 +155,28 @@ module.exports = {
         throw inserted;
       else {
         if (inserted.ops[0].is_activity === undefined || inserted.ops[0].is_activity === true) {//insert activity if not test initiated
-          createActivity(inserted.ops[0]).then((activity) => {
-            createNotification(activity);
-          }).catch((error) => {
-            request.log('error', error);
-            reply(boom.badImplementation());
-          });
+          findContentTitle(inserted.ops[0])
+            .then((contentTitle) => {
+              createActivity(inserted.ops[0], contentTitle)
+                .then((activity) => {
+                  createNotification(activity);
+                }).catch((error) => {
+                  request.log('error', error);
+                  reply(boom.badImplementation());
+                });
+            }).catch((error) => {
+              request.log('error', error);
+              reply(boom.badImplementation());
+            });
         }
-
-        inserted.ops[0].author = authorsMap.get(inserted.ops[0].user_id);//insert author data
-        reply(co.rewriteID(inserted.ops[0]));
+        return insertAuthor(inserted.ops[0]).then((comment) => {
+          reply(co.rewriteID(comment));
+        }).catch((error) => {
+          request.log('error', error);
+          reply(boom.badImplementation());
+        });
       }
     }).catch((error) => {
-      console.log(error);
       request.log('error', error);
       reply(boom.badImplementation());
     });
@@ -205,9 +218,13 @@ module.exports = {
 
   //Get All Comments from database for the id in the request
   getDiscussion: function(request, reply) {
+    let content_kind = request.params.content_kind;
+    if (content_kind === undefined) {// this is just to serve requests from old front-end version
+      content_kind = 'slide';
+    }
     //Clean collection and insert mockup comments - only if request.params.id === 0
     return initMockupData(request.params.id)
-      .then(() => commentDB.getAll(encodeURIComponent(request.params.id))
+      .then(() => commentDB.getAll(content_kind, encodeURIComponent(request.params.id))
       .then((comments) => {
         // if (co.isEmpty(comments))
         //   reply(boom.notFound());
@@ -220,8 +237,18 @@ module.exports = {
         // comments.sort((comment1, comment2) => {return (comment2.timestamp - comment1.timestamp);});
 
         let replies = [];
+        let arrayOfAuthorPromisses = [];
         comments.forEach((comment, index) => {
-          comment.author = authorsMap.get(comment.user_id);//insert author data
+          let promise = insertAuthor(comment).then((comment) => {
+
+            if (comment.user_id.length === 24) {//Mockup - old kind of ids
+              comment.author = getMockupAuthor(comment.user_id);//insert author data
+            }
+          }).catch((error) => {
+            request.log('error', error);
+            reply(boom.badImplementation());
+          });
+          arrayOfAuthorPromisses.push(promise);
 
           //move replies to their places
           let parent_comment_id = comment.parent_comment;
@@ -236,21 +263,25 @@ module.exports = {
             }
           }
         });
+        Promise.all(arrayOfAuthorPromisses).then(() => {
+          //remove comments which were inserted as replies
+          replies.reverse();
+          replies.forEach((i) => {
+            comments.splice(i, 1);
+          });
 
-        //remove comments which were inserted as replies
-        replies.reverse();
-        replies.forEach((i) => {
-          comments.splice(i, 1);
+          let jsonReply = JSON.stringify(comments);
+          reply(jsonReply);
+
+        }).catch((error) => {
+          request.log('error', error);
+          reply(boom.badImplementation());
         });
-
-        let jsonReply = JSON.stringify(comments);
-        reply(jsonReply);
-
       })).catch((error) => {
+        console.log(error);
         request.log('error', error);
         reply(boom.badImplementation());
       });
-
   },
 
   //Get All Comments from database
@@ -262,8 +293,18 @@ module.exports = {
         });
 
         let replies = [];
+        let arrayOfAuthorPromisses = [];
         comments.forEach((comment, index) => {
-          comment.author = authorsMap.get(comment.user_id);//insert author data
+          let promise = insertAuthor(comment).then((comment) => {
+
+            if (comment.user_id.length === 24) {//Mockup - old kind of ids
+              comment.author = getMockupAuthor(comment.user_id);//insert author data
+            }
+          }).catch((error) => {
+            request.log('error', error);
+            reply(boom.badImplementation());
+          });
+          arrayOfAuthorPromisses.push(promise);
 
           //move replies to their places
           let parent_comment_id = comment.parent_comment;
@@ -278,16 +319,31 @@ module.exports = {
             }
           }
         });
+        Promise.all(arrayOfAuthorPromisses).then(() => {
+          //remove comments which were inserted as replies
+          replies.reverse();
+          replies.forEach((i) => {
+            comments.splice(i, 1);
+          });
 
-        //remove comments which were inserted as replies
-        replies.reverse();
-        replies.forEach((i) => {
-          comments.splice(i, 1);
+          let jsonReply = JSON.stringify(comments);
+          reply(jsonReply);
+
+        }).catch((error) => {
+          request.log('error', error);
+          reply(boom.badImplementation());
         });
+      }).catch((error) => {
+        request.log('error', error);
+        reply(boom.badImplementation());
+      });
+  },
 
-        let jsonReply = JSON.stringify(comments);
-        reply(jsonReply);
-
+  //Get the number of comments from database for the id in the request
+  getDiscussionCount: function(request, reply) {
+    return commentDB.getCount(request.params.content_kind, encodeURIComponent(request.params.id))
+      .then((count) => {
+        reply (count);
       }).catch((error) => {
         request.log('error', error);
         reply(boom.badImplementation());
@@ -318,6 +374,104 @@ function initMockupData(identifier) {
       .then(() => insertMockupData());
   }
   return new Promise((resolve) => {resolve (1);});
+}
+
+//insert author data using user microservice
+function insertAuthor(comment) {
+  let myPromise = new Promise((resolve, reject) => {
+
+    let options = {
+      host: Microservices.user.uri,
+      port: 80,
+      path: '/user/' + comment.user_id
+    };
+
+    let req = http.get(options, (res) => {
+      if (res.statusCode === '404') {//user not found
+        comment.author = {
+          id: comment.user_id,
+          username: 'unknown',
+          avatar: ''
+        };
+        resolve(activity);
+      }
+      // console.log('HEADERS: ' + JSON.stringify(res.headers));
+      res.setEncoding('utf8');
+      let body = '';
+      res.on('data', (chunk) => {
+        // console.log('Response: ', chunk);
+        body += chunk;
+      });
+      res.on('end', () => {
+        let parsed = JSON.parse(body);
+        comment.author = {
+          id: comment.user_id,
+          username: parsed.username,
+          avatar: parsed.picture
+        };
+        resolve(comment);
+      });
+    });
+    req.on('error', (e) => {
+      console.log('problem with request: ' + e.message);
+      reject(e);
+    });
+  });
+
+  return myPromise;
+}
+
+//find content title using deck microservice
+function findContentTitle(comment) {
+  let myPromise = new Promise((resolve, reject) => {
+
+    let options = {
+      host: Microservices.deck.uri,
+      port: 80,
+      path: '/' + comment.content_kind + '/' + comment.content_id
+    };
+
+    let req = http.get(options, (res) => {
+      if (res.statusCode === '404') {//user not found
+        resolve('');
+      }
+      // console.log('HEADERS: ' + JSON.stringify(res.headers));
+      res.setEncoding('utf8');
+      let body = '';
+      res.on('data', (chunk) => {
+        // console.log('Response: ', chunk);
+        body += chunk;
+      });
+      res.on('end', () => {
+        let parsed = JSON.parse(body);
+        let title = '';
+        if (parsed.revisions) {
+          //get title from result
+          const activeRevisionId = parsed.active;
+          let activeRevision = parsed.revisions[0];
+          if (activeRevisionId !== undefined) {
+            activeRevision = parsed.revisions.find((revision) => revision.id === activeRevisionId);
+            title = activeRevision.title;
+          }
+        }
+        resolve(title);
+      });
+    });
+    req.on('error', (e) => {
+      console.log('problem with request: ' + e.message);
+      reject(e);
+    });
+  });
+
+  return myPromise;
+}
+
+function getMockupAuthor(userId) {
+  let author = authorsMap.get(userId);//insert author data
+  if (author === undefined) {
+    author = authorsMap.get('112233445566778899000000');
+  }
+  return author;
 }
 
 //Insert mockup data to the collection
@@ -418,27 +572,27 @@ let authorsMap = new Map([
   }]
 ]);
 
-let slideNameMap = new Map([
-  ['7', 'SlideWiki Documentation'],
-  ['8', 'Introduction'],
-  ['14', 'Motivation'],
-  ['16', 'SlideWiki for Humanity'],
-  ['17', 'Feature Overview'],
-  ['18', 'How is SlideWiki different?'],
-  ['9', 'Collaborative authoring of presentations'],
-  ['10', 'Revisioning'],
-  ['11', 'Persistent URL Scheme'],
-  ['153', 'Test'],
-  ['19', 'Visibility, Licensing and Attribution'],
-  ['20', 'Editor Groups'],
-  ['36', 'Other features'],
-  ['37', 'others'],
-  ['43', 'others2'],
-  ['34', 'Branching'],
-  ['35', 'Branching'],
-  ['23', 'Slide editing'],
-  ['24', 'Structuring a presentation'],
-  ['25', 'Questionnaires'],
-  ['26', 'Questionnaires'],
-  ['27', 'Supporting Organizations']
-]);
+// let slideNameMap = new Map([
+//   ['7', 'SlideWiki Documentation'],
+//   ['8', 'Introduction'],
+//   ['14', 'Motivation'],
+//   ['16', 'SlideWiki for Humanity'],
+//   ['17', 'Feature Overview'],
+//   ['18', 'How is SlideWiki different?'],
+//   ['9', 'Collaborative authoring of presentations'],
+//   ['10', 'Revisioning'],
+//   ['11', 'Persistent URL Scheme'],
+//   ['153', 'Test'],
+//   ['19', 'Visibility, Licensing and Attribution'],
+//   ['20', 'Editor Groups'],
+//   ['36', 'Other features'],
+//   ['37', 'others'],
+//   ['43', 'others2'],
+//   ['34', 'Branching'],
+//   ['35', 'Branching'],
+//   ['23', 'Slide editing'],
+//   ['24', 'Structuring a presentation'],
+//   ['25', 'Questionnaires'],
+//   ['26', 'Questionnaires'],
+//   ['27', 'Supporting Organizations']
+// ]);

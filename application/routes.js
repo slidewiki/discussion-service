@@ -11,6 +11,23 @@ module.exports = function(server) {
   //Get discussion with content id id from database and return the entire tree (when not available, return NOT FOUND). Validate id
   server.route({
     method: 'GET',
+    path: '/discussion/{content_kind}/{id}',
+    handler: handlers.getDiscussion,
+    config: {
+      validate: {
+        params: {
+          content_kind: Joi.string().valid('deck', 'slide'),
+          id: Joi.string()
+        },
+      },
+      tags: ['api'],
+      description: 'Get a discussion (example id: 8; id:000000000000000000000000 recreates mockup data)'
+    }
+  });
+
+  //Get discussion with content id id from database and return the entire tree (when not available, return NOT FOUND). Validate id
+  server.route({
+    method: 'GET',
     path: '/discussion/{id}',
     handler: handlers.getDiscussion,
     config: {
@@ -20,7 +37,24 @@ module.exports = function(server) {
         },
       },
       tags: ['api'],
-      description: 'Get a discussion (example id: 8; id:000000000000000000000000 recreates mockup data)'
+      description: 'Get a discussion (for slides) (example id: 8; id:000000000000000000000000 recreates mockup data)'
+    }
+  });
+
+  //Get the number of comments in a discussion with content id id from database
+  server.route({
+    method: 'GET',
+    path: '/discussion/count/{content_kind}/{id}',
+    handler: handlers.getDiscussionCount,
+    config: {
+      validate: {
+        params: {
+          content_kind: Joi.string().valid('deck', 'slide'),
+          id: Joi.string()
+        },
+      },
+      tags: ['api'],
+      description: 'Get the number of comments in a discussion'
     }
   });
 
