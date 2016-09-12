@@ -7,6 +7,8 @@ describe('Discussion service', () => {
 
   let handler, expect;
 
+  const content_id = '8';
+  const content_kind = 'slide';
   beforeEach((done) => {
     //Clean everything up before doing new tests
     Object.keys(require.cache).forEach((key) => delete require.cache[key]);
@@ -20,8 +22,8 @@ describe('Discussion service', () => {
   });
 
   const comment = {
-    content_id: '8',
-    content_kind: 'slide',
+    content_id: content_id,
+    content_kind: content_kind,
     title: 'Unit_handler_dummy',
     text: 'handler_dummy',
     user_id: '000000000000000000000000',
@@ -66,8 +68,8 @@ describe('Discussion service', () => {
     });
     it('Update comment', () => {
       const comment2 = {
-        content_id: '8',
-        content_kind: 'slide',
+        content_id: content_id,
+        content_kind: content_kind,
         title: 'Updated_Unit_handler_dummy',
         text: 'handler_dummy',
         user_id: '000000000000000000000000',
@@ -95,6 +97,23 @@ describe('Discussion service', () => {
         expect(1).to.equals(2);
       });
     });
+    it('Count comments', () => {
+      let req = {
+        params: {
+          id: content_id,
+          content_kind: content_kind
+        }
+      };
+      return handler.getDiscussionCount(req, (result) => {
+        expect(result).to.equal(1);
+        return;
+      })
+      .catch((Error) => {
+        console.log('Error', Error);
+        throw Error;
+        expect(1).to.equals(2);
+      });
+    });
     it('Delete comment', () => {
       let req = {
         payload: {
@@ -111,5 +130,6 @@ describe('Discussion service', () => {
         expect(1).to.equals(2);
       });
     });
+
   });
 });
