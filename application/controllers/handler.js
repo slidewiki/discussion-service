@@ -432,7 +432,7 @@ function findContentTitle(comment) {
     };
 
     let req = http.get(options, (res) => {
-      if (res.statusCode === '404') {//user not found
+      if (res.statusCode === '404') {//content not found
         resolve('');
       }
       // console.log('HEADERS: ' + JSON.stringify(res.headers));
@@ -451,8 +451,8 @@ function findContentTitle(comment) {
           let activeRevision = parsed.revisions[0];
           if (activeRevisionId !== undefined) {
             activeRevision = parsed.revisions.find((revision) => revision.id === activeRevisionId);
-            title = activeRevision.title;
           }
+          title = activeRevision.title;
         }
         resolve(title);
       });
