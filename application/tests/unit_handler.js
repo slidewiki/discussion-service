@@ -29,7 +29,6 @@ describe('Discussion service', () => {
     user_id: '000000000000000000000000',
     is_activity: false
   };
-  let commentId = '';
 
   context('Using all exported functions - ', () => {
     it('Add comment', () => {
@@ -39,7 +38,6 @@ describe('Discussion service', () => {
 
       return handler.newComment(req, (result) => {
         expect(result.id).to.not.equal(undefined);
-        commentId = result.id;
         return;
       })
       .catch((Error) => {
@@ -50,46 +48,70 @@ describe('Discussion service', () => {
     });
     it('Get comment', () => {
       let req = {
-        params: {
-          id: commentId
-        }
       };
 
-      return handler.getComment(req, (result) => {
-        expect(String(result.id)).to.equal(String(commentId));
-        expect(result.title).to.equal(comment.title);
-        return;
-      })
-      .catch((Error) => {
+      return handler.getAllDiscussions(req, (result) => {
+        let commentId = JSON.parse(result)[0].id;
+        let req = {
+          params: {
+            id: commentId
+          }
+        };
+
+        return handler.getComment(req, (result2) => {
+          expect(String(result2.id)).to.equal(String(commentId));
+          expect(result2.title).to.equal(comment.title);
+          return;
+        })
+        .catch((Error) => {
+          console.log(Error);
+          throw Error;
+          expect(1).to.equals(2);
+        });
+      }).catch((Error) => {
         console.log(Error);
         throw Error;
         expect(1).to.equals(2);
       });
     });
     it('Update comment', () => {
-      const comment2 = {
-        content_id: content_id,
-        content_kind: content_kind,
-        title: 'Updated_Unit_handler_dummy',
-        text: 'handler_dummy',
-        user_id: '000000000000000000000000',
-        is_activity: false
-      };
       let req = {
-        params: {
-          id: commentId
-        },
-        payload: comment2
       };
 
-      return handler.updateComment(req, (result) => {
+      return handler.getAllDiscussions(req, (result) => {
+        let commentId = JSON.parse(result)[0].id;
 
-        return handler.getComment(req, (result2) => {
-          expect(String(result2.id)).to.equal(String(commentId));
-          expect(result2.title).to.equal(comment2.title);
-          return;
+        const comment2 = {
+          content_id: content_id,
+          content_kind: content_kind,
+          title: 'Updated_Unit_handler_dummy',
+          text: 'handler_dummy',
+          user_id: '000000000000000000000000',
+          is_activity: false
+        };
+        let req = {
+          params: {
+            id: commentId
+          },
+          payload: comment2
+        };
+
+        return handler.updateComment(req, (result2) => {
+
+          return handler.getComment(req, (result3) => {
+            expect(String(result3.id)).to.equal(String(commentId));
+            expect(result3.title).to.equal(comment2.title);
+            return;
+          }).catch((Error) => {
+            console.log(Error);
+            throw Error;
+            expect(1).to.equals(2);
+          });
+        }).catch((Error) => {
+          console.log(Error);
+          throw Error;
+          expect(1).to.equals(2);
         });
-
       })
       .catch((Error) => {
         console.log(Error);
@@ -116,13 +138,23 @@ describe('Discussion service', () => {
     });
     it('Delete comment', () => {
       let req = {
-        payload: {
-          id: commentId
-        }
       };
-      return handler.deleteComment(req, (result) => {
-        expect(result.msg).to.not.equal(undefined);
-        return;
+      return handler.getAllDiscussions(req, (result) => {
+        let commentId = JSON.parse(result)[0].id;
+        let req = {
+          params: {
+            id: commentId
+          }
+        };
+        return handler.deleteComment(req, (result2) => {
+          expect(result2.msg).to.not.equal(undefined);
+          return;
+        })
+        .catch((Error) => {
+          console.log('Error', Error);
+          throw Error;
+          expect(1).to.equals(2);
+        });
       })
       .catch((Error) => {
         console.log('Error', Error);
@@ -130,6 +162,5 @@ describe('Discussion service', () => {
         expect(1).to.equals(2);
       });
     });
-
   });
 });

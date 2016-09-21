@@ -11,7 +11,7 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
 const Microservices = require('../configs/microservices');
 let http = require('http');
 //Send request to insert new activity
-function createActivity(comment, contentName) {
+function createActivity(comment) {
   let myPromise = new Promise((resolve, reject) => {
     const activityType = (comment.parent_comment === undefined) ? 'comment' : 'reply';
     const commentId = comment._id ? comment._id : comment.id;//co.rewriteID(comment) might be executing at the same time
@@ -24,7 +24,7 @@ function createActivity(comment, contentName) {
       user_id: comment.user_id,
       content_id: comment.content_id,
       content_kind: comment.content_kind,
-      content_name: contentName,
+      content_name: comment.content_name,
       comment_info: {
         comment_id: commentId,
         text: comment.title
@@ -150,38 +150,39 @@ module.exports = {
 
   //Create Comment with new id and payload or return INTERNAL_SERVER_ERROR
   newComment: function(request, reply) {
-    return commentDB.insert(request.payload).then((inserted) => {
-      if (co.isEmpty(inserted.ops) || co.isEmpty(inserted.ops[0]))
-        throw inserted;
-      else {
-        if (inserted.ops[0].is_activity === undefined || inserted.ops[0].is_activity === true) {//insert activity if not test initiated
-          findContentTitle(inserted.ops[0])
-            .then((contentTitle) => {
-              createActivity(inserted.ops[0], contentTitle)
+    return findContentTitle(request.payload)
+      .then((contentTitle) => {
+        commentDB.insert(request.payload).then((inserted) => {
+          if (co.isEmpty(inserted.ops) || co.isEmpty(inserted.ops[0]))
+            throw inserted;
+          else {
+            inserted.ops[0].content_name = contentTitle;
+            if (inserted.ops[0].is_activity === undefined || inserted.ops[0].is_activity === true) {//insert activity if not test initiated
+
+              createActivity(inserted.ops[0])
                 .then((activity) => {
                   createNotification(activity);
                 }).catch((error) => {
                   request.log('error', error);
                   reply(boom.badImplementation());
                 });
+            }
+            return insertAuthor(inserted.ops[0]).then((comment) => {
+              reply(co.rewriteID(comment));
             }).catch((error) => {
               request.log('error', error);
               reply(boom.badImplementation());
             });
-        }
-        return insertAuthor(inserted.ops[0]).then((comment) => {
-          reply(co.rewriteID(comment));
+          }
         }).catch((error) => {
           request.log('error', error);
           reply(boom.badImplementation());
         });
-      }
-    }).catch((error) => {
-      request.log('error', error);
-      reply(boom.badImplementation());
-    });
+      }).catch((error) => {
+        request.log('error', error);
+        reply(boom.badImplementation());
+      });
   },
-
 
   //Update Comment with id id and payload or return INTERNAL_SERVER_ERROR
   updateComment: function(request, reply) {
@@ -393,7 +394,7 @@ function insertAuthor(comment) {
           username: 'unknown',
           avatar: ''
         };
-        resolve(activity);
+        resolve(comment);
       }
       // console.log('HEADERS: ' + JSON.stringify(res.headers));
       res.setEncoding('utf8');
