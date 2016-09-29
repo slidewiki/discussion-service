@@ -25,6 +25,7 @@ function createActivity(comment) {
       content_id: comment.content_id,
       content_kind: comment.content_kind,
       content_name: comment.content_name,
+      content_owner_id: comment.content_owner_id,
       comment_info: {
         comment_id: commentId,
         text: comment.title
@@ -40,7 +41,7 @@ function createActivity(comment) {
 
       // host: 'activitiesservice.manfredfris.ch',
       host: Microservices.activities.uri,
-      port: 80,
+      port: Microservices.activities.port,
       path: '/activity/new',
       method: 'POST',
       headers : {
@@ -70,57 +71,56 @@ function createActivity(comment) {
   });
 
   return myPromise;
-
 }
 
 //Send request to insert new notification
 function createNotification(activity) {
   //TODO find list of subscribed users
-  if (activity.content_id.split('-')[0] === '8') {//current dummy user is subscribed to this content_id
+  // if (activity.content_id.split('-')[0] === '8') {//current dummy user is subscribed to this content_id
 
-    let notification = activity;
-    notification.subscribed_user_id = '112233445566778899000001';
-    notification.activity_id = activity.id;
+  let notification = activity;
+  notification.subscribed_user_id = activity.content_owner_id;
+  notification.activity_id = activity.id;
 
-    delete notification.timestamp;
-    delete notification.author;
-    delete notification.id;
+  delete notification.timestamp;
+  delete notification.author;
+  delete notification.id;
 
-    let data = JSON.stringify(activity);
-    let options = {
-      //CHANGES FOR LOCALHOST IN PUPIN (PROXY)
-      // host: 'proxy.rcub.bg.ac.rs',
-      // port: 8080,
-      // path: 'http://activitiesservice.manfredfris.ch/activity/new',
-      // path: 'http://' + Microservices.activities.uri + '/activity/new',
+  let data = JSON.stringify(activity);
+  let options = {
+    //CHANGES FOR LOCALHOST IN PUPIN (PROXY)
+    // host: 'proxy.rcub.bg.ac.rs',
+    // port: 8080,
+    // path: 'http://activitiesservice.manfredfris.ch/activity/new',
+    // path: 'http://' + Microservices.activities.uri + '/activity/new',
 
-      // host: 'activitiesservice.manfredfris.ch',
-      host: Microservices.notification.uri,
-      port: 80,
-      path: '/notification/new',
-      method: 'POST',
-      headers : {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache',
-        'Content-Length': data.length
-      }
-    };
+    // host: 'activitiesservice.manfredfris.ch',
+    host: Microservices.notification.uri,
+    port: Microservices.notification.port,
+    path: '/notification/new',
+    method: 'POST',
+    headers : {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache',
+      'Content-Length': data.length
+    }
+  };
 
-    let req = http.request(options, (res) => {
-      // console.log('STATUS: ' + res.statusCode);
-      // console.log('HEADERS: ' + JSON.stringify(res.headers));
-      res.setEncoding('utf8');
-      res.on('data', (chunk) => {
-        // console.log('Response: ', chunk);
+  let req = http.request(options, (res) => {
+    // console.log('STATUS: ' + res.statusCode);
+    // console.log('HEADERS: ' + JSON.stringify(res.headers));
+    res.setEncoding('utf8');
+    res.on('data', (chunk) => {
+      // console.log('Response: ', chunk);
 
-      });
     });
-    req.on('error', (e) => {
-      console.log('problem with request: ' + e.message);
-    });
-    req.write(data);
-    req.end();
-  }
+  });
+  req.on('error', (e) => {
+    console.log('problem with request: ' + e.message);
+  });
+  req.write(data);
+  req.end();
+  // }
 }
 
 module.exports = {
@@ -150,13 +150,14 @@ module.exports = {
 
   //Create Comment with new id and payload or return INTERNAL_SERVER_ERROR
   newComment: function(request, reply) {
-    return findContentTitle(request.payload)
-      .then((contentTitle) => {
+    return findContentTitleAndOwner(request.payload)
+      .then((contentTitleAndOwner) => {
         commentDB.insert(request.payload).then((inserted) => {
           if (co.isEmpty(inserted.ops) || co.isEmpty(inserted.ops[0]))
             throw inserted;
           else {
-            inserted.ops[0].content_name = contentTitle;
+            inserted.ops[0].content_name = contentTitleAndOwner.title;
+            inserted.ops[0].content_owner_id = contentTitleAndOwner.ownerId;
             if (inserted.ops[0].is_activity === undefined || inserted.ops[0].is_activity === true) {//insert activity if not test initiated
 
               createActivity(inserted.ops[0])
@@ -279,7 +280,6 @@ module.exports = {
           reply(boom.badImplementation());
         });
       })).catch((error) => {
-        console.log(error);
         request.log('error', error);
         reply(boom.badImplementation());
       });
@@ -383,7 +383,7 @@ function insertAuthor(comment) {
 
     let options = {
       host: Microservices.user.uri,
-      port: 80,
+      port: Microservices.user.port,
       path: '/user/' + comment.user_id
     };
 
@@ -422,19 +422,19 @@ function insertAuthor(comment) {
   return myPromise;
 }
 
-//find content title using deck microservice
-function findContentTitle(comment) {
+//find content title and ownerId using deck microservice
+function findContentTitleAndOwner(comment) {
   let myPromise = new Promise((resolve, reject) => {
 
     let options = {
       host: Microservices.deck.uri,
-      port: 80,
+      port: Microservices.deck.port,
       path: '/' + comment.content_kind + '/' + comment.content_id
     };
 
     let req = http.get(options, (res) => {
       if (res.statusCode === '404') {//content not found
-        resolve('');
+        resolve({title: '', ownerId: '0'});
       }
       // console.log('HEADERS: ' + JSON.stringify(res.headers));
       res.setEncoding('utf8');
@@ -446,6 +446,15 @@ function findContentTitle(comment) {
       res.on('end', () => {
         let parsed = JSON.parse(body);
         let title = '';
+        let ownerId = 0;
+        let contentRevisionId = undefined;
+        let contentIdParts = comment.content_id.split('-');
+        if (contentIdParts.length > 0) {
+          contentRevisionId = contentIdParts[contentIdParts.length - 1];
+        }
+        if (parsed.user) {
+          ownerId = parsed.user;
+        }
         if (parsed.revisions) {
           //get title from result
           const activeRevisionId = parsed.active;
@@ -453,9 +462,17 @@ function findContentTitle(comment) {
           if (activeRevisionId !== undefined) {
             activeRevision = parsed.revisions.find((revision) => revision.id === activeRevisionId);
           }
-          title = activeRevision.title;
+          if (contentRevisionId !== undefined) {
+            let contentRevision = parsed.revisions.find((revision) => revision.id === contentRevisionId);
+            if (contentRevision !== undefined) {
+              ownerId = contentRevision.user;
+            }
+          }
+          if (activeRevision !== undefined) {
+            title = activeRevision.title;
+          }
         }
-        resolve(title);
+        resolve({title: title, ownerId: String(ownerId)});
       });
     });
     req.on('error', (e) => {
