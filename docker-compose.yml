@@ -9,3 +9,7 @@ discussionservice:
     - APPLICATION_PORT=80
     - DATABASE_PORT=27017
     - VIRTUAL_HOST=discussionservice.experimental.slidewiki.org
+    - SERVICE_URL_DECK=deckservice.experimental.slidewiki.org
+    - SERVICE_URL_USER=userservice.experimental.slidewiki.org
+    - SERVICE_URL_NOTIFICATION=notificationservice.experimental.slidewiki.org
+    - SERVICE_URL_ACTIVITIES=activitiesservice.experimental.slidewiki.org
