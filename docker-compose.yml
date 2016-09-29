@@ -8,4 +8,4 @@ discussionservice:
   environment:
     - APPLICATION_PORT=80
     - DATABASE_PORT=27017
-    - VIRTUAL_HOST=discussionservice.manfredfris.ch
+    - VIRTUAL_HOST=discussionservice.experimental.slidewiki.org
