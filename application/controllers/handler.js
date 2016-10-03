@@ -41,7 +41,7 @@ function createActivity(comment) {
 
       // host: 'activitiesservice.manfredfris.ch',
       host: Microservices.activities.uri,
-      port: Microservices.activities.port,
+      port: 80,
       path: '/activity/new',
       method: 'POST',
       headers : {
@@ -96,7 +96,7 @@ function createNotification(activity) {
 
     // host: 'activitiesservice.manfredfris.ch',
     host: Microservices.notification.uri,
-    port: Microservices.notification.port,
+    port: 80,
     path: '/notification/new',
     method: 'POST',
     headers : {
@@ -383,7 +383,7 @@ function insertAuthor(comment) {
 
     let options = {
       host: Microservices.user.uri,
-      port: Microservices.user.port,
+      port: 80,
       path: '/user/' + comment.user_id
     };
 
@@ -428,7 +428,7 @@ function findContentTitleAndOwner(comment) {
 
     let options = {
       host: Microservices.deck.uri,
-      port: Microservices.deck.port,
+      port: 80,
       path: '/' + comment.content_kind + '/' + comment.content_id
     };
 
