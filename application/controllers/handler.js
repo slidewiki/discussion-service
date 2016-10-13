@@ -86,7 +86,7 @@ function createNotification(activity) {
   delete notification.author;
   delete notification.id;
 
-  let data = JSON.stringify(activity);
+  let data = JSON.stringify(notification);
   let options = {
     //CHANGES FOR LOCALHOST IN PUPIN (PROXY)
     // host: 'proxy.rcub.bg.ac.rs',
