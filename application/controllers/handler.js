@@ -403,28 +403,25 @@ function findContentTitleAndOwner(comment) {
         let parsed = JSON.parse(body);
         let title = '';
         let ownerId = 0;
-        let contentRevisionId = undefined;
         let contentIdParts = comment.content_id.split('-');
-        if (contentIdParts.length > 0) {
-          contentRevisionId = contentIdParts[contentIdParts.length - 1];
-        }
+        let contentRevisionId = (contentIdParts.length > 1) ? contentIdParts[contentIdParts.length - 1] : undefined;
+
         if (parsed.user) {
           ownerId = parsed.user;
         }
         if (parsed.revisions !== undefined && parsed.revisions.length > 0 && parsed.revisions[0] !== null) {
           //get title from result
-          let contentRevision = undefined;
-          if (contentRevisionId !== undefined) {
-            contentRevision = parsed.revisions.find((revision) => revision.id === contentRevisionId);
-          }
+
+          let contentRevision = (contentRevisionId !== undefined) ? parsed.revisions.find((revision) =>  String(revision.id) ===  String(contentRevisionId)) : undefined;
+
           if (contentRevision !== undefined) {
             ownerId = contentRevision.user;
             title = contentRevision.title;
           } else {//if revision from content_id is not found take data from active revision
             const activeRevisionId = parsed.active;
-            let activeRevision = parsed.revisions[0];//if active is not defined take the first revision in array
+            let activeRevision = parsed.revisions[parsed.revisions.length - 1];//if active is not defined take the last revision in array
             if (activeRevisionId !== undefined) {
-              activeRevision = parsed.revisions.find((revision) => revision.id === activeRevisionId);
+              activeRevision = parsed.revisions.find((revision) =>  String(revision.id) ===  String(activeRevisionId));
             }
             if (activeRevision !== undefined) {
               title = activeRevision.title;
