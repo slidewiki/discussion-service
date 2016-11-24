@@ -45,9 +45,13 @@ function createActivity(comment) {
       // console.log('STATUS: ' + res.statusCode);
       // console.log('HEADERS: ' + JSON.stringify(res.headers));
       res.setEncoding('utf8');
+      let body = '';
       res.on('data', (chunk) => {
         // console.log('Response: ', chunk);
-        let newActivity = JSON.parse(chunk);
+        body += chunk;
+      });
+      res.on('end', () => {
+        let newActivity = JSON.parse(body);
         resolve(newActivity);
       });
     });
@@ -127,6 +131,10 @@ module.exports = {
   newComment: function(request, reply) {
     return findContentTitleAndOwner(request.payload)
       .then((contentTitleAndOwner) => {
+        let contentIdParts = request.payload.content_id.split('-');
+        if (contentIdParts.length === 1) {//there is no revision id
+          request.payload.content_id += '-' + contentTitleAndOwner.revisionId;
+        }
         commentDB.insert(request.payload).then((inserted) => {
           if (co.isEmpty(inserted.ops) || co.isEmpty(inserted.ops[0]))
             throw inserted;
@@ -199,51 +207,56 @@ module.exports = {
     if (content_kind === undefined) {// this is just to serve requests from old front-end version
       content_kind = 'slide';
     }
-    //Clean collection and insert mockup comments - only if request.params.id === 0
-    return initMockupData(request.params.id)
-      .then(() => commentDB.getAll(content_kind, encodeURIComponent(request.params.id))
-      .then((comments) => {
-        // if (co.isEmpty(comments))
-        //   reply(boom.notFound());
-        // else {
-        comments.forEach((comment) => {
-          co.rewriteID(comment);
-        });
 
-        let replies = [];
-        let arrayOfAuthorPromisses = [];
-        comments.forEach((comment, index) => {
-          let promise = insertAuthor(comment);
-          arrayOfAuthorPromisses.push(promise);
-
-          //move replies to their places
-          let parent_comment_id = comment.parent_comment;
-          if (parent_comment_id !== undefined) {
-            let parentComment = findComment(comments, parent_comment_id);
-            if (parentComment !== null) {//found parent comment
-              if (parentComment.replies === undefined) {//first reply
-                parentComment.replies = [];
-              }
-              parentComment.replies.push(comment);
-              replies.push(index);//remember index, to remove it later
-            }
-          }
-        });
-        Promise.all(arrayOfAuthorPromisses).then(() => {
-          //remove comments which were inserted as replies
-          replies.reverse();
-          replies.forEach((i) => {
-            comments.splice(i, 1);
+    return addContentRevisionIdIfMissing(content_kind, request.params.id)
+      .then((contentId) => {
+        commentDB.getAll(content_kind, encodeURIComponent(contentId))
+        .then((comments) => {
+          // if (co.isEmpty(comments))
+          //   reply(boom.notFound());
+          // else {
+          comments.forEach((comment) => {
+            co.rewriteID(comment);
           });
 
-          let jsonReply = JSON.stringify(comments);
-          reply(jsonReply);
+          let replies = [];
+          let arrayOfAuthorPromisses = [];
+          comments.forEach((comment, index) => {
+            let promise = insertAuthor(comment);
+            arrayOfAuthorPromisses.push(promise);
 
+            //move replies to their places
+            let parent_comment_id = comment.parent_comment;
+            if (parent_comment_id !== undefined) {
+              let parentComment = findComment(comments, parent_comment_id);
+              if (parentComment !== null) {//found parent comment
+                if (parentComment.replies === undefined) {//first reply
+                  parentComment.replies = [];
+                }
+                parentComment.replies.push(comment);
+                replies.push(index);//remember index, to remove it later
+              }
+            }
+          });
+          Promise.all(arrayOfAuthorPromisses).then(() => {
+            //remove comments which were inserted as replies
+            replies.reverse();
+            replies.forEach((i) => {
+              comments.splice(i, 1);
+            });
+
+            let jsonReply = JSON.stringify(comments);
+            reply(jsonReply);
+
+          }).catch((error) => {
+            request.log('error', error);
+            reply(boom.badImplementation());
+          });
         }).catch((error) => {
           request.log('error', error);
           reply(boom.badImplementation());
         });
-      })).catch((error) => {
+      }).catch((error) => {
         request.log('error', error);
         reply(boom.badImplementation());
       });
@@ -298,9 +311,15 @@ module.exports = {
 
   //Get the number of comments from database for the id in the request
   getDiscussionCount: function(request, reply) {
-    return commentDB.getCount(request.params.content_kind, encodeURIComponent(request.params.id))
-      .then((count) => {
-        reply (count);
+    return addContentRevisionIdIfMissing(request.params.content_kind, request.params.id)
+      .then((contentId) => {
+        commentDB.getCount(request.params.content_kind, encodeURIComponent(contentId))
+          .then((count) => {
+            reply (count);
+          }).catch((error) => {
+            request.log('error', error);
+            reply(boom.badImplementation());
+          });
       }).catch((error) => {
         request.log('error', error);
         reply(boom.badImplementation());
@@ -425,16 +444,60 @@ function findContentTitleAndOwner(comment) {
             }
             if (activeRevision !== undefined) {
               title = activeRevision.title;
+              if (contentRevisionId === undefined) {
+                contentRevisionId = activeRevision.id;
+              }
             }
           }
         }
-        resolve({title: title, ownerId: String(ownerId)});
+        resolve({title: title, ownerId: String(ownerId), revisionId: contentRevisionId});
       });
     });
     req.on('error', (e) => {
       console.log('problem with request: ' + e.message);
       reject(e);
     });
+  });
+
+  return myPromise;
+}
+
+function addContentRevisionIdIfMissing(contentKind, contentId) {
+  let myPromise = new Promise((resolve, reject) => {
+    let contentIdParts = contentId.split('-');
+    if (contentIdParts.length > 1) {//there is a revision id
+      resolve(contentId);
+    } else {
+      let options = {
+        host: Microservices.deck.uri,
+        port: 80,
+        path: '/' + contentKind + '/' + contentId
+      };
+
+      let req = http.get(options, (res) => {
+        if (res.statusCode === '404') {//content not found
+          resolve(contentId);
+        }
+
+        res.setEncoding('utf8');
+        let body = '';
+        res.on('data', (chunk) => {
+          body += chunk;
+        });
+        res.on('end', () => {
+          let parsed = JSON.parse(body);
+          let revisionId = 1;
+          if (parsed.revisions !== undefined && parsed.revisions.length > 0 && parsed.revisions[0] !== null) {
+            revisionId = (parsed.active) ? parsed.active : (parsed.revisions.length - 1);
+          }
+          resolve(contentId + '-' + revisionId);
+        });
+      });
+      req.on('error', (e) => {
+        console.log('problem with request: ' + e.message);
+        reject(e);
+      });
+    }
   });
 
   return myPromise;
