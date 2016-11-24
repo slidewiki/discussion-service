@@ -47,7 +47,7 @@ describe('REST API', () => {
         response.payload.should.be.a('string');
         let payload = JSON.parse(response.payload);
         payload.should.be.an('object').and.contain.keys('content_id', 'timestamp', 'user_id');
-        payload.content_id.should.equal('112233445566778899000671');
+        payload.title.should.equal('Dummy');
         payload.user_id.should.equal('000000000000000000000000');
         done();
       });
