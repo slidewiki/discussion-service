@@ -66,47 +66,6 @@ function createActivity(comment) {
   return myPromise;
 }
 
-//Send request to insert new notification
-function createNotification(activity) {
-  //TODO find list of subscribed users
-  // if (activity.content_id.split('-')[0] === '8') {//current dummy user is subscribed to this content_id
-
-  let notification = activity;
-  notification.subscribed_user_id = activity.content_owner_id;
-  notification.activity_id = activity.id;
-
-  delete notification.timestamp;
-  delete notification.author;
-  delete notification.id;
-
-  let data = JSON.stringify(notification);
-  let options = {
-    host: Microservices.notification.uri,
-    port: 80,
-    path: '/notification/new',
-    method: 'POST',
-    headers : {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-cache',
-      'Content-Length': data.length
-    }
-  };
-
-  let req = http.request(options, (res) => {
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    res.setEncoding('utf8');
-    res.on('data', (chunk) => {
-      // console.log('Response: ', chunk);
-    });
-  });
-  req.on('error', (e) => {
-    console.log('problem with request: ' + e.message);
-  });
-  req.write(data);
-  req.end();
-}
-
 module.exports = {
   //Get Comment from database or return NOT FOUND
   getComment: function(request, reply) {
@@ -142,14 +101,7 @@ module.exports = {
             inserted.ops[0].content_name = contentTitleAndOwner.title;
             inserted.ops[0].content_owner_id = contentTitleAndOwner.ownerId;
             if (inserted.ops[0].is_activity === undefined || inserted.ops[0].is_activity === true) {//insert activity if not test initiated
-
-              createActivity(inserted.ops[0])
-                .then((activity) => {
-                  createNotification(activity);
-                }).catch((error) => {
-                  request.log('error', error);
-                  reply(boom.badImplementation());
-                });
+              createActivity(inserted.ops[0]);
             }
             return insertAuthor(inserted.ops[0]).then((comment) => {
               reply(co.rewriteID(comment));
