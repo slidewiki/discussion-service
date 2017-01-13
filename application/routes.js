@@ -21,7 +21,7 @@ module.exports = function(server) {
         },
       },
       tags: ['api'],
-      description: 'Get a discussion (example id: 8; id:000000000000000000000000 recreates mockup data)'
+      description: 'Get a discussion'
     }
   });
 
@@ -37,7 +37,7 @@ module.exports = function(server) {
         },
       },
       tags: ['api'],
-      description: 'Get a discussion (for slides) (example id: 8; id:000000000000000000000000 recreates mockup data)'
+      description: 'Get a discussion (for slides)'
     }
   });
 
