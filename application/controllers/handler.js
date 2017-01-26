@@ -305,14 +305,6 @@ function insertAuthor(comment) {
     };
 
     let req = http.get(options, (res) => {
-      if (res.statusCode === '404') {//user not found
-        comment.author = {
-          id: comment.user_id,
-          username: 'unknown',
-          avatar: ''
-        };
-        resolve(comment);
-      }
       // console.log('HEADERS: ' + JSON.stringify(res.headers));
       res.setEncoding('utf8');
       let body = '';
@@ -321,11 +313,17 @@ function insertAuthor(comment) {
         body += chunk;
       });
       res.on('end', () => {
-        let parsed = JSON.parse(body);
+        let username = 'unknown';
+        let avatar = '';
+        if (res.statusCode === 200) {//user is found
+          let parsed = JSON.parse(body);
+          username = parsed.username;
+          avatar = parsed.picture;
+        }
         comment.author = {
           id: comment.user_id,
-          username: parsed.username,
-          avatar: parsed.picture
+          username: username,
+          avatar: avatar
         };
         resolve(comment);
       });
@@ -350,9 +348,6 @@ function findContentTitleAndOwner(comment) {
     };
 
     let req = http.get(options, (res) => {
-      if (res.statusCode === '404') {//content not found
-        resolve({title: '', ownerId: '0'});
-      }
       // console.log('HEADERS: ' + JSON.stringify(res.headers));
       res.setEncoding('utf8');
       let body = '';
@@ -361,33 +356,35 @@ function findContentTitleAndOwner(comment) {
         body += chunk;
       });
       res.on('end', () => {
-        let parsed = JSON.parse(body);
         let title = '';
         let ownerId = 0;
+
         let contentIdParts = comment.content_id.split('-');
         let contentRevisionId = (contentIdParts.length > 1) ? contentIdParts[contentIdParts.length - 1] : undefined;
+        if (res.statusCode === 200) {//content is found
+          let parsed = JSON.parse(body);
+          if (parsed.user) {
+            ownerId = parsed.user;
+          }
+          if (parsed.revisions !== undefined && parsed.revisions.length > 0 && parsed.revisions[0] !== null) {
+            //get title from result
 
-        if (parsed.user) {
-          ownerId = parsed.user;
-        }
-        if (parsed.revisions !== undefined && parsed.revisions.length > 0 && parsed.revisions[0] !== null) {
-          //get title from result
+            let contentRevision = (contentRevisionId !== undefined) ? parsed.revisions.find((revision) =>  String(revision.id) ===  String(contentRevisionId)) : undefined;
 
-          let contentRevision = (contentRevisionId !== undefined) ? parsed.revisions.find((revision) =>  String(revision.id) ===  String(contentRevisionId)) : undefined;
-
-          if (contentRevision !== undefined) {
-            ownerId = contentRevision.user;
-            title = contentRevision.title;
-          } else {//if revision from content_id is not found take data from active revision
-            const activeRevisionId = parsed.active;
-            let activeRevision = parsed.revisions[parsed.revisions.length - 1];//if active is not defined take the last revision in array
-            if (activeRevisionId !== undefined) {
-              activeRevision = parsed.revisions.find((revision) =>  String(revision.id) ===  String(activeRevisionId));
-            }
-            if (activeRevision !== undefined) {
-              title = activeRevision.title;
-              if (contentRevisionId === undefined) {
-                contentRevisionId = activeRevision.id;
+            if (contentRevision !== undefined) {
+              ownerId = contentRevision.user;
+              title = contentRevision.title;
+            } else {//if revision from content_id is not found take data from active revision
+              const activeRevisionId = parsed.active;
+              let activeRevision = parsed.revisions[parsed.revisions.length - 1];//if active is not defined take the last revision in array
+              if (activeRevisionId !== undefined) {
+                activeRevision = parsed.revisions.find((revision) =>  String(revision.id) ===  String(activeRevisionId));
+              }
+              if (activeRevision !== undefined) {
+                title = activeRevision.title;
+                if (contentRevisionId === undefined) {
+                  contentRevisionId = activeRevision.id;
+                }
               }
             }
           }
@@ -417,16 +414,16 @@ function addContentRevisionIdIfMissing(contentKind, contentId) {
       };
 
       let req = http.get(options, (res) => {
-        if (res.statusCode === '404') {//content not found
-          resolve(contentId);
-        }
-
         res.setEncoding('utf8');
         let body = '';
         res.on('data', (chunk) => {
           body += chunk;
         });
         res.on('end', () => {
+          if (res.statusCode !== 200) {//content not found
+            resolve(contentId);
+          }
+
           let parsed = JSON.parse(body);
           let revisionId = 1;
           if (parsed.revisions !== undefined && parsed.revisions.length > 0 && parsed.revisions[0] !== null) {
