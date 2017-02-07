@@ -76,12 +76,12 @@ module.exports = {
         return insertAuthor(comment).then((comment) => {
           reply(co.rewriteID(comment));
         }).catch((error) => {
-          request.log('error', error);
+          tryRequestLog(request, 'error', error);
           reply(boom.badImplementation());
         });
       }
     }).catch((error) => {
-      request.log('error', error);
+      tryRequestLog(request, 'error', error);
       reply(boom.badImplementation());
     });
   },
@@ -106,16 +106,16 @@ module.exports = {
             return insertAuthor(inserted.ops[0]).then((comment) => {
               reply(co.rewriteID(comment));
             }).catch((error) => {
-              request.log('error', error);
+              tryRequestLog(request, 'error', error);
               reply(boom.badImplementation());
             });
           }
         }).catch((error) => {
-          request.log('error', error);
+          tryRequestLog(request, 'error', error);
           reply(boom.badImplementation());
         });
       }).catch((error) => {
-        request.log('error', error);
+        tryRequestLog(request, 'error', error);
         reply(boom.badImplementation());
       });
   },
@@ -128,7 +128,7 @@ module.exports = {
       else
         reply(replaced.value);
     }).catch((error) => {
-      request.log('error', error);
+      tryRequestLog(request, 'error', error);
       reply(boom.badImplementation());
     });
   },
@@ -138,7 +138,7 @@ module.exports = {
     return commentDB.delete(encodeURIComponent(request.payload.id)).then(() =>
       reply({'msg': 'comment is successfully deleted...'})
     ).catch((error) => {
-      request.log('error', error);
+      tryRequestLog(request, 'error', error);
       reply(boom.badImplementation());
     });
   },
@@ -148,7 +148,7 @@ module.exports = {
     return commentDB.deleteAllWithContentID(encodeURIComponent(request.payload.content_id)).then(() =>
       reply({'msg': 'discussion is successfully deleted...'})
     ).catch((error) => {
-      request.log('error', error);
+      tryRequestLog(request, 'error', error);
       reply(boom.badImplementation());
     });
   },
@@ -201,15 +201,15 @@ module.exports = {
             reply(jsonReply);
 
           }).catch((error) => {
-            request.log('error', error);
+            tryRequestLog(request, 'error', error);
             reply(boom.badImplementation());
           });
         }).catch((error) => {
-          request.log('error', error);
+          tryRequestLog(request, 'error', error);
           reply(boom.badImplementation());
         });
       }).catch((error) => {
-        request.log('error', error);
+        tryRequestLog(request, 'error', error);
         reply(boom.badImplementation());
       });
   },
@@ -252,11 +252,11 @@ module.exports = {
           reply(jsonReply);
 
         }).catch((error) => {
-          request.log('error', error);
+          tryRequestLog(request, 'error', error);
           reply(boom.badImplementation());
         });
       }).catch((error) => {
-        request.log('error', error);
+        tryRequestLog(request, 'error', error);
         reply(boom.badImplementation());
       });
   },
@@ -269,11 +269,11 @@ module.exports = {
           .then((count) => {
             reply (count);
           }).catch((error) => {
-            request.log('error', error);
+            tryRequestLog(request, 'error', error);
             reply(boom.badImplementation());
           });
       }).catch((error) => {
-        request.log('error', error);
+        tryRequestLog(request, 'error', error);
         reply(boom.badImplementation());
       });
   }
@@ -440,4 +440,13 @@ function addContentRevisionIdIfMissing(contentKind, contentId) {
   });
 
   return myPromise;
+}
+
+//This function tries to use request log and uses console.log if this doesnt work - this is the case in unit tests
+function tryRequestLog(request, message, _object) {
+  try {
+    request.log(message, _object);
+  } catch (e) {
+    console.log(message, _object);
+  }
 }
