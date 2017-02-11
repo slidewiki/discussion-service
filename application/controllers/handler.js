@@ -15,10 +15,7 @@ function createActivity(comment) {
   let myPromise = new Promise((resolve, reject) => {
     const activityType = (comment.parent_comment === undefined) ? 'comment' : 'reply';
     const commentId = comment._id ? comment._id : comment.id;//co.rewriteID(comment) might be executing at the same time
-    // let contentName = slideNameMap.get(comment.content_id.split('-')[0]);//remove revision version
-    // if (contentName === undefined) {//TODO get real content_name
-    //   contentName = 'Introduction';
-    // }
+
     let data = JSON.stringify({
       activity_type: activityType,
       user_id: comment.user_id,
@@ -33,13 +30,6 @@ function createActivity(comment) {
     });
 
     let options = {
-      //CHANGES FOR LOCALHOST IN PUPIN (PROXY)
-      // host: 'proxy.rcub.bg.ac.rs',
-      // port: 8080,
-      // path: 'http://activitiesservice.manfredfris.ch/activity/new',
-      // path: 'http://' + Microservices.activities.uri + '/activity/new',
-
-      // host: 'activitiesservice.manfredfris.ch',
       host: Microservices.activities.uri,
       port: 80,
       path: '/activity/new',
@@ -58,7 +48,6 @@ function createActivity(comment) {
       res.on('data', (chunk) => {
         // console.log('Response: ', chunk);
         let newActivity = JSON.parse(chunk);
-
         resolve(newActivity);
       });
     });
@@ -88,13 +77,6 @@ function createNotification(activity) {
 
   let data = JSON.stringify(notification);
   let options = {
-    //CHANGES FOR LOCALHOST IN PUPIN (PROXY)
-    // host: 'proxy.rcub.bg.ac.rs',
-    // port: 8080,
-    // path: 'http://activitiesservice.manfredfris.ch/activity/new',
-    // path: 'http://' + Microservices.activities.uri + '/activity/new',
-
-    // host: 'activitiesservice.manfredfris.ch',
     host: Microservices.notification.uri,
     port: 80,
     path: '/notification/new',
@@ -112,7 +94,6 @@ function createNotification(activity) {
     res.setEncoding('utf8');
     res.on('data', (chunk) => {
       // console.log('Response: ', chunk);
-
     });
   });
   req.on('error', (e) => {
@@ -131,11 +112,6 @@ module.exports = {
         reply(boom.notFound());
       else {
         return insertAuthor(comment).then((comment) => {
-
-          if (comment.user_id.length === 24) {//Mockup - old kind of ids
-            comment.author = getMockupAuthor(comment.user_id);//insert author data
-          }
-
           reply(co.rewriteID(comment));
         }).catch((error) => {
           request.log('error', error);
@@ -235,21 +211,10 @@ module.exports = {
           co.rewriteID(comment);
         });
 
-        //sort by timestamp
-        // comments.sort((comment1, comment2) => {return (comment2.timestamp - comment1.timestamp);});
-
         let replies = [];
         let arrayOfAuthorPromisses = [];
         comments.forEach((comment, index) => {
-          let promise = insertAuthor(comment).then((comment) => {
-
-            if (comment.user_id.length === 24) {//Mockup - old kind of ids
-              comment.author = getMockupAuthor(comment.user_id);//insert author data
-            }
-          }).catch((error) => {
-            request.log('error', error);
-            reply(boom.badImplementation());
-          });
+          let promise = insertAuthor(comment);
           arrayOfAuthorPromisses.push(promise);
 
           //move replies to their places
@@ -296,15 +261,7 @@ module.exports = {
         let replies = [];
         let arrayOfAuthorPromisses = [];
         comments.forEach((comment, index) => {
-          let promise = insertAuthor(comment).then((comment) => {
-
-            if (comment.user_id.length === 24) {//Mockup - old kind of ids
-              comment.author = getMockupAuthor(comment.user_id);//insert author data
-            }
-          }).catch((error) => {
-            request.log('error', error);
-            reply(boom.badImplementation());
-          });
+          let promise = insertAuthor(comment);
           arrayOfAuthorPromisses.push(promise);
 
           //move replies to their places
@@ -455,21 +412,24 @@ function findContentTitleAndOwner(comment) {
         if (parsed.user) {
           ownerId = parsed.user;
         }
-        if (parsed.revisions) {
+        if (parsed.revisions !== undefined && parsed.revisions.length > 0 && parsed.revisions[0] !== null) {
           //get title from result
-          const activeRevisionId = parsed.active;
-          let activeRevision = parsed.revisions[0];
-          if (activeRevisionId !== undefined) {
-            activeRevision = parsed.revisions.find((revision) => revision.id === activeRevisionId);
-          }
+          let contentRevision = undefined;
           if (contentRevisionId !== undefined) {
-            let contentRevision = parsed.revisions.find((revision) => revision.id === contentRevisionId);
-            if (contentRevision !== undefined) {
-              ownerId = contentRevision.user;
-            }
+            contentRevision = parsed.revisions.find((revision) => revision.id === contentRevisionId);
           }
-          if (activeRevision !== undefined) {
-            title = activeRevision.title;
+          if (contentRevision !== undefined) {
+            ownerId = contentRevision.user;
+            title = contentRevision.title;
+          } else {//if revision from content_id is not found take active revision
+            const activeRevisionId = parsed.active;
+            let activeRevision = parsed.revisions[0];//if active is not defined take the first revision in array
+            if (activeRevisionId !== undefined) {
+              activeRevision = parsed.revisions.find((revision) => revision.id === activeRevisionId);
+            }
+            if (activeRevision !== undefined) {
+              title = activeRevision.title;
+            }
           }
         }
         resolve({title: title, ownerId: String(ownerId)});
@@ -484,13 +444,13 @@ function findContentTitleAndOwner(comment) {
   return myPromise;
 }
 
-function getMockupAuthor(userId) {
-  let author = authorsMap.get(userId);//insert author data
-  if (author === undefined) {
-    author = authorsMap.get('112233445566778899000000');
-  }
-  return author;
-}
+// function getMockupAuthor(userId) {
+//   let author = authorsMap.get(userId);//insert author data
+//   if (author === undefined) {
+//     author = authorsMap.get('112233445566778899000000');
+//   }
+//   return author;
+// }
 
 //Insert mockup data to the collection
 function insertMockupData() {
@@ -551,44 +511,44 @@ function insertMockupData() {
     return commentDB.insert(reply3);
   });
 }
-
-let authorsMap = new Map([
-  ['112233445566778899000001', {
-    id: 7,
-    username: 'Dejan P.',
-    avatar: '/assets/images/mock-avatars/deadpool_256.png'
-  }],
-  ['112233445566778899000002', {
-    id: 8,
-    username: 'Nikola T.',
-    avatar: '/assets/images/mock-avatars/man_512.png'
-  }],
-  ['112233445566778899000003', {
-    id: 9,
-    username: 'Marko B.',
-    avatar: '/assets/images/mock-avatars/batman_512.jpg'
-  }],
-  ['112233445566778899000004', {
-    id: 10,
-    username: 'Valentina J.',
-    avatar: '/assets/images/mock-avatars/ninja-simple_512.png'
-  }],
-  ['112233445566778899000005', {
-    id: 11,
-    username: 'Voice in the crowd',
-    avatar: '/assets/images/mock-avatars/anon_256.jpg'
-  }],
-  ['112233445566778899000006', {
-    id: 12,
-    username: 'SlideWiki FTW',
-    avatar: '/assets/images/mock-avatars/spooky_256.png'
-  }],
-  ['112233445566778899000000', {
-    id: 13,
-    username: 'Dutch',
-    avatar: '/assets/images/mock-avatars/dgirl.jpeg'
-  }]
-]);
+//
+// let authorsMap = new Map([
+//   ['112233445566778899000001', {
+//     id: 7,
+//     username: 'Dejan P.',
+//     avatar: '/assets/images/mock-avatars/deadpool_256.png'
+//   }],
+//   ['112233445566778899000002', {
+//     id: 8,
+//     username: 'Nikola T.',
+//     avatar: '/assets/images/mock-avatars/man_512.png'
+//   }],
+//   ['112233445566778899000003', {
+//     id: 9,
+//     username: 'Marko B.',
+//     avatar: '/assets/images/mock-avatars/batman_512.jpg'
+//   }],
+//   ['112233445566778899000004', {
+//     id: 10,
+//     username: 'Valentina J.',
+//     avatar: '/assets/images/mock-avatars/ninja-simple_512.png'
+//   }],
+//   ['112233445566778899000005', {
+//     id: 11,
+//     username: 'Voice in the crowd',
+//     avatar: '/assets/images/mock-avatars/anon_256.jpg'
+//   }],
+//   ['112233445566778899000006', {
+//     id: 12,
+//     username: 'SlideWiki FTW',
+//     avatar: '/assets/images/mock-avatars/spooky_256.png'
+//   }],
+//   ['112233445566778899000000', {
+//     id: 13,
+//     username: 'Dutch',
+//     avatar: '/assets/images/mock-avatars/dgirl.jpeg'
+//   }]
+// ]);
 
 // let slideNameMap = new Map([
 //   ['7', 'SlideWiki Documentation'],
