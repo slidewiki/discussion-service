@@ -9,7 +9,8 @@ const boom = require('boom'), //Boom gives us some predefined http codes and pro
   co = require('../common');
 
 const Microservices = require('../configs/microservices');
-let http = require('http');
+// let http = require('http');
+let rp = require('request-promise-native');
 //Send request to insert new activity
 function createActivity(comment) {
   let myPromise = new Promise((resolve, reject) => {
@@ -29,39 +30,75 @@ function createActivity(comment) {
       }
     });
 
-    let options = {
-      host: Microservices.activities.uri,
-      port: 80,
-      path: '/activity/new',
-      method: 'POST',
-      headers : {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache',
-        'Content-Length': data.length
-      }
-    };
+    rp.post({uri: Microservices.activities.uri + '/activity/new', body:data}).then((res) => {
+      console.log('Res', res);
 
-    let req = http.request(options, (res) => {
-      // console.log('STATUS: ' + res.statusCode);
-      // console.log('HEADERS: ' + JSON.stringify(res.headers));
-      res.setEncoding('utf8');
-      let body = '';
-      res.on('data', (chunk) => {
-        // console.log('Response: ', chunk);
-        body += chunk;
-      });
-      res.on('end', () => {
+      try {
         let newActivity = JSON.parse(body);
         resolve(newActivity);
-      });
-    });
-    req.on('error', (e) => {
-      console.log('problem with request: ' + e.message);
+      } catch(e) {
+        console.log(e); // error in the above string (in this case, yes)!
+        reject(e);
+      }
+
+      // callback(null, {activities: activities, selector: selector, hasMore: (activities.length === 30)});
+    }).catch((err) => {
+      console.log('Error', err);
       reject(e);
+      // callback(null, {activities: [], selector: selector, hasMore: false});
     });
-    req.write(data);
-    req.end();
   });
+
+  // let myPromise = new Promise((resolve, reject) => {
+  //   const activityType = (comment.parent_comment === undefined) ? 'comment' : 'reply';
+  //   const commentId = comment._id ? comment._id : comment.id;//co.rewriteID(comment) might be executing at the same time
+  //
+  //   let data = JSON.stringify({
+  //     activity_type: activityType,
+  //     user_id: comment.user_id,
+  //     content_id: comment.content_id,
+  //     content_kind: comment.content_kind,
+  //     content_name: comment.content_name,
+  //     content_owner_id: comment.content_owner_id,
+  //     comment_info: {
+  //       comment_id: commentId,
+  //       text: comment.title
+  //     }
+  //   });
+  //
+  //   let options = {
+  //     host: Microservices.activities.uri,
+  //     port: 80,
+  //     path: '/activity/new',
+  //     method: 'POST',
+  //     headers : {
+  //       'Content-Type': 'application/json',
+  //       'Cache-Control': 'no-cache',
+  //       'Content-Length': data.length
+  //     }
+  //   };
+  //
+  //   let req = http.request(options, (res) => {
+  //     // console.log('STATUS: ' + res.statusCode);
+  //     // console.log('HEADERS: ' + JSON.stringify(res.headers));
+  //     res.setEncoding('utf8');
+  //     let body = '';
+  //     res.on('data', (chunk) => {
+  //       // console.log('Response: ', chunk);
+  //       body += chunk;
+  //     });
+  //     res.on('end', () => {
+  //       let newActivity = JSON.parse(body);
+  //       resolve(newActivity);
+  //     });
+  //   });
+  //   req.on('error', (e) => {
+  //     console.log('problem with request: ' + e.message);
+  //     reject(e);
+  //   });
+  //   req.write(data);
+  //   req.end();
+  // });
 
   return myPromise;
 }
@@ -298,41 +335,82 @@ function findComment(array, identifier) {
 function insertAuthor(comment) {
   let myPromise = new Promise((resolve, reject) => {
 
-    let options = {
-      host: Microservices.user.uri,
-      port: 80,
-      path: '/user/' + comment.user_id
-    };
+    let username = 'unknown';
+    let avatar = '';
+    rp.get({uri: Microservices.user.uri + '/user/' + comment.user_id}).then((res) => {
+      console.log('Res', res);
 
-    let req = http.get(options, (res) => {
-      // console.log('HEADERS: ' + JSON.stringify(res.headers));
-      res.setEncoding('utf8');
-      let body = '';
-      res.on('data', (chunk) => {
-        // console.log('Response: ', chunk);
-        body += chunk;
-      });
-      res.on('end', () => {
-        let username = 'unknown';
-        let avatar = '';
-        if (res.statusCode === 200) {//user is found
-          let parsed = JSON.parse(body);
-          username = parsed.username;
-          avatar = parsed.picture;
-        }
-        comment.author = {
-          id: comment.user_id,
-          username: username,
-          avatar: avatar
-        };
-        resolve(comment);
-      });
-    });
-    req.on('error', (e) => {
-      console.log('problem with request: ' + e.message);
-      reject(e);
+      try {
+        let parsed = JSON.parse(res);
+        username = parsed.username;
+        avatar = parsed.picture;
+      } catch(e) {
+        console.log(e); // error in the above string (in this case, yes)!
+      }
+      // if (res.statusCode === 200) {//user is found
+      //   let parsed = JSON.parse(res);
+      //   username = parsed.username;
+      //   avatar = parsed.picture;
+      // }
+
+      comment.author = {
+        id: comment.user_id,
+        username: username,
+        avatar: avatar
+      };
+      resolve(comment);
+
+
+      // callback(null, {activities: activities, selector: selector, hasMore: (activities.length === 30)});
+    }).catch((err) => {
+      console.log('Error', err);
+      comment.author = {
+        id: comment.user_id,
+        username: username,
+        avatar: avatar
+      };
+      resolve(comment);
+      // callback(null, {activities: [], selector: selector, hasMore: false});
     });
   });
+
+  // let myPromise = new Promise((resolve, reject) => {
+  //
+  //   let options = {
+  //     host: Microservices.user.uri,
+  //     port: 80,
+  //     path: '/user/' + comment.user_id
+  //   };
+  //
+  //   let req = http.get(options, (res) => {
+  //     // console.log('HEADERS: ' + JSON.stringify(res.headers));
+  //     res.setEncoding('utf8');
+  //     let body = '';
+  //     res.on('data', (chunk) => {
+  //       // console.log('Response: ', chunk);
+  //       body += chunk;
+  //     });
+  //     res.on('end', () => {
+  //       let username = 'unknown';
+  //       let avatar = '';
+  //       if (res.statusCode === 200) {//user is found
+  //         let parsed = JSON.parse(body);
+  //         username = parsed.username;
+  //         avatar = parsed.picture;
+  //       }
+  //       comment.author = {
+  //         id: comment.user_id,
+  //         username: username,
+  //         avatar: avatar
+  //       };
+  //       resolve(comment);
+  //     });
+  //   });
+  //   req.on('error', (e) => {
+  //     console.log('problem with request: ' + e.message);
+  //     reject(e);
+  //   });
+  // });
 
   return myPromise;
 }
@@ -340,63 +418,114 @@ function insertAuthor(comment) {
 //find content title and ownerId using deck microservice
 function findContentTitleAndOwner(comment) {
   let myPromise = new Promise((resolve, reject) => {
+    let title = '';
+    let ownerId = 0;
 
-    let options = {
-      host: Microservices.deck.uri,
-      port: 80,
-      path: '/' + comment.content_kind + '/' + comment.content_id
-    };
+    let contentIdParts = comment.content_id.split('-');
+    let contentRevisionId = (contentIdParts.length > 1) ? contentIdParts[contentIdParts.length - 1] : undefined;
+    rp.get({uri: Microservices.deck.uri + '/' + comment.content_kind + '/' + comment.content_id}).then((res) => {
+      console.log('Res', res);
 
-    let req = http.get(options, (res) => {
-      // console.log('HEADERS: ' + JSON.stringify(res.headers));
-      res.setEncoding('utf8');
-      let body = '';
-      res.on('data', (chunk) => {
-        // console.log('Response: ', chunk);
-        body += chunk;
-      });
-      res.on('end', () => {
-        let title = '';
-        let ownerId = 0;
+      try {
+        let parsed = JSON.parse(res);
+        if (parsed.user) {
+          ownerId = parsed.user;
+        }
+        if (parsed.revisions !== undefined && parsed.revisions.length > 0 && parsed.revisions[0] !== null) {
+          //get title from result
 
-        let contentIdParts = comment.content_id.split('-');
-        let contentRevisionId = (contentIdParts.length > 1) ? contentIdParts[contentIdParts.length - 1] : undefined;
-        if (res.statusCode === 200) {//content is found
-          let parsed = JSON.parse(body);
-          if (parsed.user) {
-            ownerId = parsed.user;
-          }
-          if (parsed.revisions !== undefined && parsed.revisions.length > 0 && parsed.revisions[0] !== null) {
-            //get title from result
+          let contentRevision = (contentRevisionId !== undefined) ? parsed.revisions.find((revision) =>  String(revision.id) ===  String(contentRevisionId)) : undefined;
 
-            let contentRevision = (contentRevisionId !== undefined) ? parsed.revisions.find((revision) =>  String(revision.id) ===  String(contentRevisionId)) : undefined;
-
-            if (contentRevision !== undefined) {
-              ownerId = contentRevision.user;
-              title = contentRevision.title;
-            } else {//if revision from content_id is not found take data from active revision
-              const activeRevisionId = parsed.active;
-              let activeRevision = parsed.revisions[parsed.revisions.length - 1];//if active is not defined take the last revision in array
-              if (activeRevisionId !== undefined) {
-                activeRevision = parsed.revisions.find((revision) =>  String(revision.id) ===  String(activeRevisionId));
-              }
-              if (activeRevision !== undefined) {
-                title = activeRevision.title;
-                if (contentRevisionId === undefined) {
-                  contentRevisionId = activeRevision.id;
-                }
+          if (contentRevision !== undefined) {
+            ownerId = contentRevision.user;
+            title = contentRevision.title;
+          } else {//if revision from content_id is not found take data from active revision
+            const activeRevisionId = parsed.active;
+            let activeRevision = parsed.revisions[parsed.revisions.length - 1];//if active is not defined take the last revision in array
+            if (activeRevisionId !== undefined) {
+              activeRevision = parsed.revisions.find((revision) =>  String(revision.id) ===  String(activeRevisionId));
+            }
+            if (activeRevision !== undefined) {
+              title = activeRevision.title;
+              if (contentRevisionId === undefined) {
+                contentRevisionId = activeRevision.id;
               }
             }
           }
         }
-        resolve({title: title, ownerId: String(ownerId), revisionId: contentRevisionId});
-      });
-    });
-    req.on('error', (e) => {
-      console.log('problem with request: ' + e.message);
-      reject(e);
+
+      } catch(e) {
+        console.log(e); // error in the above string (in this case, yes)!
+      }
+      resolve({title: title, ownerId: String(ownerId), revisionId: contentRevisionId});
+
+      // callback(null, {activities: activities, selector: selector, hasMore: (activities.length === 30)});
+    }).catch((err) => {
+      console.log('Error', err);
+      resolve({title: title, ownerId: String(ownerId), revisionId: contentRevisionId});
+      // callback(null, {activities: [], selector: selector, hasMore: false});
     });
   });
+
+
+  // let myPromise = new Promise((resolve, reject) => {
+  //
+  //   let options = {
+  //     host: Microservices.deck.uri,
+  //     port: 80,
+  //     path: '/' + comment.content_kind + '/' + comment.content_id
+  //   };
+  //
+  //   let req = http.get(options, (res) => {
+  //     // console.log('HEADERS: ' + JSON.stringify(res.headers));
+  //     res.setEncoding('utf8');
+  //     let body = '';
+  //     res.on('data', (chunk) => {
+  //       // console.log('Response: ', chunk);
+  //       body += chunk;
+  //     });
+  //     res.on('end', () => {
+  //       let title = '';
+  //       let ownerId = 0;
+  //
+  //       let contentIdParts = comment.content_id.split('-');
+  //       let contentRevisionId = (contentIdParts.length > 1) ? contentIdParts[contentIdParts.length - 1] : undefined;
+  //       if (res.statusCode === 200) {//content is found
+  //         let parsed = JSON.parse(body);
+  //         if (parsed.user) {
+  //           ownerId = parsed.user;
+  //         }
+  //         if (parsed.revisions !== undefined && parsed.revisions.length > 0 && parsed.revisions[0] !== null) {
+  //           //get title from result
+  //
+  //           let contentRevision = (contentRevisionId !== undefined) ? parsed.revisions.find((revision) =>  String(revision.id) ===  String(contentRevisionId)) : undefined;
+  //
+  //           if (contentRevision !== undefined) {
+  //             ownerId = contentRevision.user;
+  //             title = contentRevision.title;
+  //           } else {//if revision from content_id is not found take data from active revision
+  //             const activeRevisionId = parsed.active;
+  //             let activeRevision = parsed.revisions[parsed.revisions.length - 1];//if active is not defined take the last revision in array
+  //             if (activeRevisionId !== undefined) {
+  //               activeRevision = parsed.revisions.find((revision) =>  String(revision.id) ===  String(activeRevisionId));
+  //             }
+  //             if (activeRevision !== undefined) {
+  //               title = activeRevision.title;
+  //               if (contentRevisionId === undefined) {
+  //                 contentRevisionId = activeRevision.id;
+  //               }
+  //             }
+  //           }
+  //         }
+  //       }
+  //       resolve({title: title, ownerId: String(ownerId), revisionId: contentRevisionId});
+  //     });
+  //   });
+  //   req.on('error', (e) => {
+  //     console.log('problem with request: ' + e.message);
+  //     reject(e);
+  //   });
+  // });
 
   return myPromise;
 }
@@ -407,37 +536,69 @@ function addContentRevisionIdIfMissing(contentKind, contentId) {
     if (contentIdParts.length > 1) {//there is a revision id
       resolve(contentId);
     } else {
-      let options = {
-        host: Microservices.deck.uri,
-        port: 80,
-        path: '/' + contentKind + '/' + contentId
-      };
+      rp.get({uri: Microservices.deck.uri + '/' + contentKind + '/' + contentId}).then((res) => {
+        console.log('Res', res);
 
-      let req = http.get(options, (res) => {
-        res.setEncoding('utf8');
-        let body = '';
-        res.on('data', (chunk) => {
-          body += chunk;
-        });
-        res.on('end', () => {
-          if (res.statusCode !== 200) {//content not found
-            resolve(contentId);
-          }
-
-          let parsed = JSON.parse(body);
+        try {
+          let parsed = JSON.parse(res);
           let revisionId = 1;
           if (parsed.revisions !== undefined && parsed.revisions.length > 0 && parsed.revisions[0] !== null) {
             revisionId = (parsed.active) ? parsed.active : (parsed.revisions.length - 1);
           }
           resolve(contentId + '-' + revisionId);
-        });
-      });
-      req.on('error', (e) => {
-        console.log('problem with request: ' + e.message);
-        reject(e);
+        } catch(e) {
+          console.log(e); // error in the above string (in this case, yes)!
+          resolve(contentId);
+        }
+
+        // callback(null, {activities: activities, selector: selector, hasMore: (activities.length === 30)});
+      }).catch((err) => {
+        console.log('Error', err);
+
+        resolve(contentId);
+        // callback(null, {activities: [], selector: selector, hasMore: false});
       });
     }
   });
+
+
+
+  // let myPromise = new Promise((resolve, reject) => {
+  //   let contentIdParts = contentId.split('-');
+  //   if (contentIdParts.length > 1) {//there is a revision id
+  //     resolve(contentId);
+  //   } else {
+  //     let options = {
+  //       host: Microservices.deck.uri,
+  //       port: 80,
+  //       path: '/' + contentKind + '/' + contentId
+  //     };
+  //
+  //     let req = http.get(options, (res) => {
+  //       res.setEncoding('utf8');
+  //       let body = '';
+  //       res.on('data', (chunk) => {
+  //         body += chunk;
+  //       });
+  //       res.on('end', () => {
+  //         if (res.statusCode !== 200) {//content not found
+  //           resolve(contentId);
+  //         }
+  //
+  //         let parsed = JSON.parse(body);
+  //         let revisionId = 1;
+  //         if (parsed.revisions !== undefined && parsed.revisions.length > 0 && parsed.revisions[0] !== null) {
+  //           revisionId = (parsed.active) ? parsed.active : (parsed.revisions.length - 1);
+  //         }
+  //         resolve(contentId + '-' + revisionId);
+  //       });
+  //     });
+  //     req.on('error', (e) => {
+  //       console.log('problem with request: ' + e.message);
+  //       reject(e);
+  //     });
+  //   }
+  // });
 
   return myPromise;
 }
