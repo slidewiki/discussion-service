@@ -15,10 +15,7 @@ function createActivity(comment) {
   let myPromise = new Promise((resolve, reject) => {
     const activityType = (comment.parent_comment === undefined) ? 'comment' : 'reply';
     const commentId = comment._id ? comment._id : comment.id;//co.rewriteID(comment) might be executing at the same time
-    // let contentName = slideNameMap.get(comment.content_id.split('-')[0]);//remove revision version
-    // if (contentName === undefined) {//TODO get real content_name
-    //   contentName = 'Introduction';
-    // }
+
     let data = JSON.stringify({
       activity_type: activityType,
       user_id: comment.user_id,
@@ -33,13 +30,6 @@ function createActivity(comment) {
     });
 
     let options = {
-      //CHANGES FOR LOCALHOST IN PUPIN (PROXY)
-      // host: 'proxy.rcub.bg.ac.rs',
-      // port: 8080,
-      // path: 'http://activitiesservice.manfredfris.ch/activity/new',
-      // path: 'http://' + Microservices.activities.uri + '/activity/new',
-
-      // host: 'activitiesservice.manfredfris.ch',
       host: Microservices.activities.uri,
       port: 80,
       path: '/activity/new',
@@ -55,10 +45,13 @@ function createActivity(comment) {
       // console.log('STATUS: ' + res.statusCode);
       // console.log('HEADERS: ' + JSON.stringify(res.headers));
       res.setEncoding('utf8');
+      let body = '';
       res.on('data', (chunk) => {
         // console.log('Response: ', chunk);
-        let newActivity = JSON.parse(chunk);
-
+        body += chunk;
+      });
+      res.on('end', () => {
+        let newActivity = JSON.parse(body);
         resolve(newActivity);
       });
     });
@@ -73,56 +66,6 @@ function createActivity(comment) {
   return myPromise;
 }
 
-//Send request to insert new notification
-function createNotification(activity) {
-  //TODO find list of subscribed users
-  // if (activity.content_id.split('-')[0] === '8') {//current dummy user is subscribed to this content_id
-
-  let notification = activity;
-  notification.subscribed_user_id = activity.content_owner_id;
-  notification.activity_id = activity.id;
-
-  delete notification.timestamp;
-  delete notification.author;
-  delete notification.id;
-
-  let data = JSON.stringify(notification);
-  let options = {
-    //CHANGES FOR LOCALHOST IN PUPIN (PROXY)
-    // host: 'proxy.rcub.bg.ac.rs',
-    // port: 8080,
-    // path: 'http://activitiesservice.manfredfris.ch/activity/new',
-    // path: 'http://' + Microservices.activities.uri + '/activity/new',
-
-    // host: 'activitiesservice.manfredfris.ch',
-    host: Microservices.notification.uri,
-    port: 80,
-    path: '/notification/new',
-    method: 'POST',
-    headers : {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-cache',
-      'Content-Length': data.length
-    }
-  };
-
-  let req = http.request(options, (res) => {
-    // console.log('STATUS: ' + res.statusCode);
-    // console.log('HEADERS: ' + JSON.stringify(res.headers));
-    res.setEncoding('utf8');
-    res.on('data', (chunk) => {
-      // console.log('Response: ', chunk);
-
-    });
-  });
-  req.on('error', (e) => {
-    console.log('problem with request: ' + e.message);
-  });
-  req.write(data);
-  req.end();
-  // }
-}
-
 module.exports = {
   //Get Comment from database or return NOT FOUND
   getComment: function(request, reply) {
@@ -131,19 +74,14 @@ module.exports = {
         reply(boom.notFound());
       else {
         return insertAuthor(comment).then((comment) => {
-
-          if (comment.user_id.length === 24) {//Mockup - old kind of ids
-            comment.author = getMockupAuthor(comment.user_id);//insert author data
-          }
-
           reply(co.rewriteID(comment));
         }).catch((error) => {
-          request.log('error', error);
+          tryRequestLog(request, 'error', error);
           reply(boom.badImplementation());
         });
       }
     }).catch((error) => {
-      request.log('error', error);
+      tryRequestLog(request, 'error', error);
       reply(boom.badImplementation());
     });
   },
@@ -152,6 +90,10 @@ module.exports = {
   newComment: function(request, reply) {
     return findContentTitleAndOwner(request.payload)
       .then((contentTitleAndOwner) => {
+        let contentIdParts = request.payload.content_id.split('-');
+        if (contentIdParts.length === 1) {//there is no revision id
+          request.payload.content_id += '-' + contentTitleAndOwner.revisionId;
+        }
         commentDB.insert(request.payload).then((inserted) => {
           if (co.isEmpty(inserted.ops) || co.isEmpty(inserted.ops[0]))
             throw inserted;
@@ -159,28 +101,21 @@ module.exports = {
             inserted.ops[0].content_name = contentTitleAndOwner.title;
             inserted.ops[0].content_owner_id = contentTitleAndOwner.ownerId;
             if (inserted.ops[0].is_activity === undefined || inserted.ops[0].is_activity === true) {//insert activity if not test initiated
-
-              createActivity(inserted.ops[0])
-                .then((activity) => {
-                  createNotification(activity);
-                }).catch((error) => {
-                  request.log('error', error);
-                  reply(boom.badImplementation());
-                });
+              createActivity(inserted.ops[0]);
             }
             return insertAuthor(inserted.ops[0]).then((comment) => {
               reply(co.rewriteID(comment));
             }).catch((error) => {
-              request.log('error', error);
+              tryRequestLog(request, 'error', error);
               reply(boom.badImplementation());
             });
           }
         }).catch((error) => {
-          request.log('error', error);
+          tryRequestLog(request, 'error', error);
           reply(boom.badImplementation());
         });
       }).catch((error) => {
-        request.log('error', error);
+        tryRequestLog(request, 'error', error);
         reply(boom.badImplementation());
       });
   },
@@ -193,7 +128,7 @@ module.exports = {
       else
         reply(replaced.value);
     }).catch((error) => {
-      request.log('error', error);
+      tryRequestLog(request, 'error', error);
       reply(boom.badImplementation());
     });
   },
@@ -203,7 +138,7 @@ module.exports = {
     return commentDB.delete(encodeURIComponent(request.payload.id)).then(() =>
       reply({'msg': 'comment is successfully deleted...'})
     ).catch((error) => {
-      request.log('error', error);
+      tryRequestLog(request, 'error', error);
       reply(boom.badImplementation());
     });
   },
@@ -213,7 +148,7 @@ module.exports = {
     return commentDB.deleteAllWithContentID(encodeURIComponent(request.payload.content_id)).then(() =>
       reply({'msg': 'discussion is successfully deleted...'})
     ).catch((error) => {
-      request.log('error', error);
+      tryRequestLog(request, 'error', error);
       reply(boom.badImplementation());
     });
   },
@@ -224,63 +159,57 @@ module.exports = {
     if (content_kind === undefined) {// this is just to serve requests from old front-end version
       content_kind = 'slide';
     }
-    //Clean collection and insert mockup comments - only if request.params.id === 0
-    return initMockupData(request.params.id)
-      .then(() => commentDB.getAll(content_kind, encodeURIComponent(request.params.id))
-      .then((comments) => {
-        // if (co.isEmpty(comments))
-        //   reply(boom.notFound());
-        // else {
-        comments.forEach((comment) => {
-          co.rewriteID(comment);
-        });
 
-        //sort by timestamp
-        // comments.sort((comment1, comment2) => {return (comment2.timestamp - comment1.timestamp);});
+    return addContentRevisionIdIfMissing(content_kind, request.params.id)
+      .then((contentId) => {
+        commentDB.getAll(content_kind, encodeURIComponent(contentId))
+        .then((comments) => {
+          // if (co.isEmpty(comments))
+          //   reply(boom.notFound());
+          // else {
+          comments.forEach((comment) => {
+            co.rewriteID(comment);
+          });
 
-        let replies = [];
-        let arrayOfAuthorPromisses = [];
-        comments.forEach((comment, index) => {
-          let promise = insertAuthor(comment).then((comment) => {
+          let replies = [];
+          let arrayOfAuthorPromisses = [];
+          comments.forEach((comment, index) => {
+            let promise = insertAuthor(comment);
+            arrayOfAuthorPromisses.push(promise);
 
-            if (comment.user_id.length === 24) {//Mockup - old kind of ids
-              comment.author = getMockupAuthor(comment.user_id);//insert author data
+            //move replies to their places
+            let parent_comment_id = comment.parent_comment;
+            if (parent_comment_id !== undefined) {
+              let parentComment = findComment(comments, parent_comment_id);
+              if (parentComment !== null) {//found parent comment
+                if (parentComment.replies === undefined) {//first reply
+                  parentComment.replies = [];
+                }
+                parentComment.replies.push(comment);
+                replies.push(index);//remember index, to remove it later
+              }
             }
+          });
+          Promise.all(arrayOfAuthorPromisses).then(() => {
+            //remove comments which were inserted as replies
+            replies.reverse();
+            replies.forEach((i) => {
+              comments.splice(i, 1);
+            });
+
+            let jsonReply = JSON.stringify(comments);
+            reply(jsonReply);
+
           }).catch((error) => {
-            request.log('error', error);
+            tryRequestLog(request, 'error', error);
             reply(boom.badImplementation());
           });
-          arrayOfAuthorPromisses.push(promise);
-
-          //move replies to their places
-          let parent_comment_id = comment.parent_comment;
-          if (parent_comment_id !== undefined) {
-            let parentComment = findComment(comments, parent_comment_id);
-            if (parentComment !== null) {//found parent comment
-              if (parentComment.replies === undefined) {//first reply
-                parentComment.replies = [];
-              }
-              parentComment.replies.push(comment);
-              replies.push(index);//remember index, to remove it later
-            }
-          }
-        });
-        Promise.all(arrayOfAuthorPromisses).then(() => {
-          //remove comments which were inserted as replies
-          replies.reverse();
-          replies.forEach((i) => {
-            comments.splice(i, 1);
-          });
-
-          let jsonReply = JSON.stringify(comments);
-          reply(jsonReply);
-
         }).catch((error) => {
-          request.log('error', error);
+          tryRequestLog(request, 'error', error);
           reply(boom.badImplementation());
         });
-      })).catch((error) => {
-        request.log('error', error);
+      }).catch((error) => {
+        tryRequestLog(request, 'error', error);
         reply(boom.badImplementation());
       });
   },
@@ -296,15 +225,7 @@ module.exports = {
         let replies = [];
         let arrayOfAuthorPromisses = [];
         comments.forEach((comment, index) => {
-          let promise = insertAuthor(comment).then((comment) => {
-
-            if (comment.user_id.length === 24) {//Mockup - old kind of ids
-              comment.author = getMockupAuthor(comment.user_id);//insert author data
-            }
-          }).catch((error) => {
-            request.log('error', error);
-            reply(boom.badImplementation());
-          });
+          let promise = insertAuthor(comment);
           arrayOfAuthorPromisses.push(promise);
 
           //move replies to their places
@@ -331,22 +252,28 @@ module.exports = {
           reply(jsonReply);
 
         }).catch((error) => {
-          request.log('error', error);
+          tryRequestLog(request, 'error', error);
           reply(boom.badImplementation());
         });
       }).catch((error) => {
-        request.log('error', error);
+        tryRequestLog(request, 'error', error);
         reply(boom.badImplementation());
       });
   },
 
   //Get the number of comments from database for the id in the request
   getDiscussionCount: function(request, reply) {
-    return commentDB.getCount(request.params.content_kind, encodeURIComponent(request.params.id))
-      .then((count) => {
-        reply (count);
+    return addContentRevisionIdIfMissing(request.params.content_kind, request.params.id)
+      .then((contentId) => {
+        commentDB.getCount(request.params.content_kind, encodeURIComponent(contentId))
+          .then((count) => {
+            reply (count);
+          }).catch((error) => {
+            tryRequestLog(request, 'error', error);
+            reply(boom.badImplementation());
+          });
       }).catch((error) => {
-        request.log('error', error);
+        tryRequestLog(request, 'error', error);
         reply(boom.badImplementation());
       });
   }
@@ -367,16 +294,6 @@ function findComment(array, identifier) {
   return null;
 }
 
-//Delete all and insert mockup data
-function initMockupData(identifier) {
-  if (identifier === '000000000000000000000000') {//create collection, delete all and insert mockup data only if the user has explicitly sent 000000000000000000000000
-    return commentDB.createCollection()
-      .then(() => commentDB.deleteAll())
-      .then(() => insertMockupData());
-  }
-  return new Promise((resolve) => {resolve (1);});
-}
-
 //insert author data using user microservice
 function insertAuthor(comment) {
   let myPromise = new Promise((resolve, reject) => {
@@ -388,14 +305,6 @@ function insertAuthor(comment) {
     };
 
     let req = http.get(options, (res) => {
-      if (res.statusCode === '404') {//user not found
-        comment.author = {
-          id: comment.user_id,
-          username: 'unknown',
-          avatar: ''
-        };
-        resolve(comment);
-      }
       // console.log('HEADERS: ' + JSON.stringify(res.headers));
       res.setEncoding('utf8');
       let body = '';
@@ -404,11 +313,17 @@ function insertAuthor(comment) {
         body += chunk;
       });
       res.on('end', () => {
-        let parsed = JSON.parse(body);
+        let username = 'unknown';
+        let avatar = '';
+        if (res.statusCode === 200) {//user is found
+          let parsed = JSON.parse(body);
+          username = parsed.username;
+          avatar = parsed.picture;
+        }
         comment.author = {
           id: comment.user_id,
-          username: parsed.username,
-          avatar: parsed.picture
+          username: username,
+          avatar: avatar
         };
         resolve(comment);
       });
@@ -433,9 +348,6 @@ function findContentTitleAndOwner(comment) {
     };
 
     let req = http.get(options, (res) => {
-      if (res.statusCode === '404') {//content not found
-        resolve({title: '', ownerId: '0'});
-      }
       // console.log('HEADERS: ' + JSON.stringify(res.headers));
       res.setEncoding('utf8');
       let body = '';
@@ -444,35 +356,40 @@ function findContentTitleAndOwner(comment) {
         body += chunk;
       });
       res.on('end', () => {
-        let parsed = JSON.parse(body);
         let title = '';
         let ownerId = 0;
-        let contentRevisionId = undefined;
+
         let contentIdParts = comment.content_id.split('-');
-        if (contentIdParts.length > 0) {
-          contentRevisionId = contentIdParts[contentIdParts.length - 1];
-        }
-        if (parsed.user) {
-          ownerId = parsed.user;
-        }
-        if (parsed.revisions) {
-          //get title from result
-          const activeRevisionId = parsed.active;
-          let activeRevision = parsed.revisions[0];
-          if (activeRevisionId !== undefined) {
-            activeRevision = parsed.revisions.find((revision) => revision.id === activeRevisionId);
+        let contentRevisionId = (contentIdParts.length > 1) ? contentIdParts[contentIdParts.length - 1] : undefined;
+        if (res.statusCode === 200) {//content is found
+          let parsed = JSON.parse(body);
+          if (parsed.user) {
+            ownerId = parsed.user;
           }
-          if (contentRevisionId !== undefined) {
-            let contentRevision = parsed.revisions.find((revision) => revision.id === contentRevisionId);
+          if (parsed.revisions !== undefined && parsed.revisions.length > 0 && parsed.revisions[0] !== null) {
+            //get title from result
+
+            let contentRevision = (contentRevisionId !== undefined) ? parsed.revisions.find((revision) =>  String(revision.id) ===  String(contentRevisionId)) : undefined;
+
             if (contentRevision !== undefined) {
               ownerId = contentRevision.user;
+              title = contentRevision.title;
+            } else {//if revision from content_id is not found take data from active revision
+              const activeRevisionId = parsed.active;
+              let activeRevision = parsed.revisions[parsed.revisions.length - 1];//if active is not defined take the last revision in array
+              if (activeRevisionId !== undefined) {
+                activeRevision = parsed.revisions.find((revision) =>  String(revision.id) ===  String(activeRevisionId));
+              }
+              if (activeRevision !== undefined) {
+                title = activeRevision.title;
+                if (contentRevisionId === undefined) {
+                  contentRevisionId = activeRevision.id;
+                }
+              }
             }
           }
-          if (activeRevision !== undefined) {
-            title = activeRevision.title;
-          }
         }
-        resolve({title: title, ownerId: String(ownerId)});
+        resolve({title: title, ownerId: String(ownerId), revisionId: contentRevisionId});
       });
     });
     req.on('error', (e) => {
@@ -484,133 +401,52 @@ function findContentTitleAndOwner(comment) {
   return myPromise;
 }
 
-function getMockupAuthor(userId) {
-  let author = authorsMap.get(userId);//insert author data
-  if (author === undefined) {
-    author = authorsMap.get('112233445566778899000000');
+function addContentRevisionIdIfMissing(contentKind, contentId) {
+  let myPromise = new Promise((resolve, reject) => {
+    let contentIdParts = contentId.split('-');
+    if (contentIdParts.length > 1) {//there is a revision id
+      resolve(contentId);
+    } else {
+      let options = {
+        host: Microservices.deck.uri,
+        port: 80,
+        path: '/' + contentKind + '/' + contentId
+      };
+
+      let req = http.get(options, (res) => {
+        res.setEncoding('utf8');
+        let body = '';
+        res.on('data', (chunk) => {
+          body += chunk;
+        });
+        res.on('end', () => {
+          if (res.statusCode !== 200) {//content not found
+            resolve(contentId);
+          }
+
+          let parsed = JSON.parse(body);
+          let revisionId = 1;
+          if (parsed.revisions !== undefined && parsed.revisions.length > 0 && parsed.revisions[0] !== null) {
+            revisionId = (parsed.active) ? parsed.active : (parsed.revisions.length - 1);
+          }
+          resolve(contentId + '-' + revisionId);
+        });
+      });
+      req.on('error', (e) => {
+        console.log('problem with request: ' + e.message);
+        reject(e);
+      });
+    }
+  });
+
+  return myPromise;
+}
+
+//This function tries to use request log and uses console.log if this doesnt work - this is the case in unit tests
+function tryRequestLog(request, message, _object) {
+  try {
+    request.log(message, _object);
+  } catch (e) {
+    console.log(message, _object);
   }
-  return author;
 }
-
-//Insert mockup data to the collection
-function insertMockupData() {
-  let comment1 = {
-    content_id: '8-1',
-    content_kind: 'slide',
-    title: 'Congrats',
-    text: 'Kudos, very good presentation, I\'ll spread the word!',
-    user_id: '112233445566778899000001'
-  };
-  let ins1 = commentDB.insert(comment1);
-  let ins2 = ins1.then((ins1) => {
-    let reply1 = {
-      content_id: '8-1',
-      content_kind: 'slide',
-      title: 'Agreed',
-      text: '^^',
-      user_id: '112233445566778899000002',
-      parent_comment:String(ins1.ops[0]._id)
-    };
-    let reply2 = {
-      content_id: '8-1',
-      content_kind: 'slide',
-      title: 'Yeah',
-      text: '+1',
-      user_id: '112233445566778899000003',
-      parent_comment: String(ins1.ops[0]._id)
-    };
-
-    return commentDB.insert(reply1).then(() => commentDB.insert(reply2));
-  });
-
-  let comment2 = {
-    content_id: '8-1',
-    content_kind: 'slide',
-    title: 'Simply the best',
-    text: 'The best presentation I have seen so far on this subject',
-    user_id: '112233445566778899000004'
-  };
-  let ins4 = ins2.then(() => commentDB.insert(comment2));
-  let comment3 = {
-    content_id: '8-1',
-    content_kind: 'slide',
-    title: 'Keep up the good work',
-    text: 'Slide 54 could use some more details.\nGreat presentation though, keep on truckin!',
-    user_id: '112233445566778899000005'
-  };
-  let ins5 = ins4.then(() => commentDB.insert(comment3));
-  return ins5.then((ins5) => {
-    let reply3 = {
-      content_id: '8-1',
-      content_kind: 'slide',
-      title: 'Nitpicker!',
-      text: 'Damn nitpickers, everyone\'s a critic these days!',
-      user_id: '112233445566778899000006',
-      parent_comment: String(ins5.ops[0]._id)
-    };
-    return commentDB.insert(reply3);
-  });
-}
-
-let authorsMap = new Map([
-  ['112233445566778899000001', {
-    id: 7,
-    username: 'Dejan P.',
-    avatar: '/assets/images/mock-avatars/deadpool_256.png'
-  }],
-  ['112233445566778899000002', {
-    id: 8,
-    username: 'Nikola T.',
-    avatar: '/assets/images/mock-avatars/man_512.png'
-  }],
-  ['112233445566778899000003', {
-    id: 9,
-    username: 'Marko B.',
-    avatar: '/assets/images/mock-avatars/batman_512.jpg'
-  }],
-  ['112233445566778899000004', {
-    id: 10,
-    username: 'Valentina J.',
-    avatar: '/assets/images/mock-avatars/ninja-simple_512.png'
-  }],
-  ['112233445566778899000005', {
-    id: 11,
-    username: 'Voice in the crowd',
-    avatar: '/assets/images/mock-avatars/anon_256.jpg'
-  }],
-  ['112233445566778899000006', {
-    id: 12,
-    username: 'SlideWiki FTW',
-    avatar: '/assets/images/mock-avatars/spooky_256.png'
-  }],
-  ['112233445566778899000000', {
-    id: 13,
-    username: 'Dutch',
-    avatar: '/assets/images/mock-avatars/dgirl.jpeg'
-  }]
-]);
-
-// let slideNameMap = new Map([
-//   ['7', 'SlideWiki Documentation'],
-//   ['8', 'Introduction'],
-//   ['14', 'Motivation'],
-//   ['16', 'SlideWiki for Humanity'],
-//   ['17', 'Feature Overview'],
-//   ['18', 'How is SlideWiki different?'],
-//   ['9', 'Collaborative authoring of presentations'],
-//   ['10', 'Revisioning'],
-//   ['11', 'Persistent URL Scheme'],
-//   ['153', 'Test'],
-//   ['19', 'Visibility, Licensing and Attribution'],
-//   ['20', 'Editor Groups'],
-//   ['36', 'Other features'],
-//   ['37', 'others'],
-//   ['43', 'others2'],
-//   ['34', 'Branching'],
-//   ['35', 'Branching'],
-//   ['23', 'Slide editing'],
-//   ['24', 'Structuring a presentation'],
-//   ['25', 'Questionnaires'],
-//   ['26', 'Questionnaires'],
-//   ['27', 'Supporting Organizations']
-// ]);
