@@ -31,8 +31,6 @@ function createActivity(comment) {
     });
 
     rp.post({uri: Microservices.activities.uri + '/activity/new', body:data}).then((res) => {
-      console.log('RescreateActivity', res);
-
       try {
         let newActivity = JSON.parse(res);
         resolve(newActivity);
