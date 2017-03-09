@@ -22,7 +22,7 @@ describe('REST API', () => {
   });
 
   let comment = {
-    content_id: '112233445566778899000671',
+    content_id: '000000000000000000000000-0',
     content_kind: 'slide',
     title: 'Dummy',
     text: 'dummy',
@@ -39,18 +39,18 @@ describe('REST API', () => {
   };
 
   context('when creating a comment it', () => {
-    // it('should reply it', (done) => {
-    //   server.inject(options, (response) => {
-    //     response.should.be.an('object').and.contain.keys('statusCode','payload');
-    //     console.log(response.statusCode, response.payload);
-    //     response.statusCode.should.equal(200);
-    //     response.payload.should.be.a('string');
-    //     let payload = JSON.parse(response.payload);
-    //     payload.should.be.an('object').and.contain.keys('content_id', 'timestamp', 'user_id');
-    //     payload.title.should.equal('Dummy');
-    //     payload.user_id.should.equal('000000000000000000000000');
-    //     done();
-    //   });
-    // });
+    it('should reply it', (done) => {
+      server.inject(options, (response) => {
+        response.should.be.an('object').and.contain.keys('statusCode','payload');
+        // console.log(response.statusCode, response.payload);
+        response.statusCode.should.equal(200);
+        response.payload.should.be.a('string');
+        let payload = JSON.parse(response.payload);
+        payload.should.be.an('object').and.contain.keys('content_id', 'timestamp', 'user_id');
+        payload.title.should.equal('Dummy');
+        payload.user_id.should.equal('000000000000000000000000');
+        done();
+      });
+    });
   });
 });
