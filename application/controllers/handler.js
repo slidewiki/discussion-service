@@ -22,8 +22,6 @@ function createActivity(comment) {
       user_id: comment.user_id,
       content_id: comment.content_id,
       content_kind: comment.content_kind,
-      content_name: comment.content_name,
-      content_owner_id: comment.content_owner_id,
       comment_info: {
         comment_id: commentId,
         text: comment.title
@@ -69,18 +67,12 @@ module.exports = {
 
   //Create Comment with new id and payload or return INTERNAL_SERVER_ERROR
   newComment: function(request, reply) {
-    return findContentTitleAndOwner(request.payload)
-      .then((contentTitleAndOwner) => {
-        let contentIdParts = request.payload.content_id.split('-');
-        if (contentIdParts.length === 1) {//there is no revision id
-          request.payload.content_id += '-' + contentTitleAndOwner.revisionId;
-        }
-        commentDB.insert(request.payload).then((inserted) => {
+    return addContentRevisionIfMissing(request.payload)
+      .then((comment) => {
+        commentDB.insert(comment).then((inserted) => {
           if (co.isEmpty(inserted.ops) || co.isEmpty(inserted.ops[0]))
             throw inserted;
           else {
-            inserted.ops[0].content_name = contentTitleAndOwner.title;
-            inserted.ops[0].content_owner_id = contentTitleAndOwner.ownerId;
             if (inserted.ops[0].is_activity === undefined || inserted.ops[0].is_activity === true) {//insert activity if not test initiated
               createActivity(inserted.ops[0]);
             }
@@ -310,52 +302,26 @@ function insertAuthor(comment) {
   return myPromise;
 }
 
-//find content title and ownerId using deck microservice
-function findContentTitleAndOwner(comment) {
+//find content revision using deck microservice
+function addContentRevisionIfMissing(comment) {
   let myPromise = new Promise((resolve, reject) => {
-    let title = '';
-    let ownerId = 0;
-
     let contentIdParts = comment.content_id.split('-');
-    let contentRevisionId = (contentIdParts.length > 1) ? contentIdParts[contentIdParts.length - 1] : undefined;
-    rp.get({uri: Microservices.deck.uri + '/' + comment.content_kind + '/' + comment.content_id}).then((res) => {
-
-      try {
-        let parsed = JSON.parse(res);
-        if (parsed.user) {
-          ownerId = parsed.user;
+    if (contentIdParts.length === 1) {
+      rp.get({uri: Microservices.deck.uri + '/' + comment.content_kind + '/' + comment.content_id}).then((res) => {
+        try {
+          let parsed = JSON.parse(res);
+          comment.content_id += '-' + parsed.active;
+        } catch(e) {
+          console.log(e);
         }
-        if (parsed.revisions !== undefined && parsed.revisions.length > 0 && parsed.revisions[0] !== null) {
-          //get title from result
-
-          let contentRevision = (contentRevisionId !== undefined) ? parsed.revisions.find((revision) =>  String(revision.id) ===  String(contentRevisionId)) : undefined;
-
-          if (contentRevision !== undefined) {
-            ownerId = contentRevision.user;
-            title = contentRevision.title;
-          } else {//if revision from content_id is not found take data from active revision
-            const activeRevisionId = parsed.active;
-            let activeRevision = parsed.revisions[parsed.revisions.length - 1];//if active is not defined take the last revision in array
-            if (activeRevisionId !== undefined) {
-              activeRevision = parsed.revisions.find((revision) =>  String(revision.id) ===  String(activeRevisionId));
-            }
-            if (activeRevision !== undefined) {
-              title = activeRevision.title;
-              if (contentRevisionId === undefined) {
-                contentRevisionId = activeRevision.id;
-              }
-            }
-          }
-        }
-      } catch(e) {
-        console.log(e);
-      }
-      resolve({title: title, ownerId: String(ownerId), revisionId: contentRevisionId});
-
-    }).catch((err) => {
-      console.log('Error', err);
-      resolve({title: title, ownerId: String(ownerId), revisionId: contentRevisionId});
-    });
+        resolve({revisionId: contentRevisionId});
+      }).catch((err) => {
+        console.log('Error', err);
+        resolve(comment);
+      });
+    } else {
+      resolve(comment);
+    }
   });
 
   return myPromise;
