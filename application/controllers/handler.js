@@ -110,10 +110,10 @@ module.exports = {
           });
 
           let replies = [];
-          let arrayOfAuthorPromisses = [];
+          let arrayOfAuthorPromises = [];
           comments.forEach((comment, index) => {
             let promise = insertAuthor(comment);
-            arrayOfAuthorPromisses.push(promise);
+            arrayOfAuthorPromises.push(promise);
 
             //move replies to their places
             let parent_comment_id = comment.parent_comment;
@@ -128,7 +128,7 @@ module.exports = {
               }
             }
           });
-          Promise.all(arrayOfAuthorPromisses).then(() => {
+          Promise.all(arrayOfAuthorPromises).then(() => {
             //remove comments which were inserted as replies
             replies.reverse();
             replies.forEach((i) => {
@@ -161,10 +161,10 @@ module.exports = {
         });
 
         let replies = [];
-        let arrayOfAuthorPromisses = [];
+        let arrayOfAuthorPromises = [];
         comments.forEach((comment, index) => {
           let promise = insertAuthor(comment);
-          arrayOfAuthorPromisses.push(promise);
+          arrayOfAuthorPromises.push(promise);
 
           //move replies to their places
           let parent_comment_id = comment.parent_comment;
@@ -179,7 +179,7 @@ module.exports = {
             }
           }
         });
-        Promise.all(arrayOfAuthorPromisses).then(() => {
+        Promise.all(arrayOfAuthorPromises).then(() => {
           //remove comments which were inserted as replies
           replies.reverse();
           replies.forEach((i) => {
