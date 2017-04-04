@@ -12,38 +12,6 @@ const Microservices = require('../configs/microservices');
 // let http = require('http');
 let rp = require('request-promise-native');
 //Send request to insert new activity
-function createActivity(comment) {
-  let myPromise = new Promise((resolve, reject) => {
-    const activityType = (comment.parent_comment === undefined) ? 'comment' : 'reply';
-    const commentId = comment._id ? comment._id : comment.id;//co.rewriteID(comment) might be executing at the same time
-
-    let data = JSON.stringify({
-      activity_type: activityType,
-      user_id: comment.user_id,
-      content_id: comment.content_id,
-      content_kind: comment.content_kind,
-      comment_info: {
-        comment_id: commentId,
-        text: comment.title
-      }
-    });
-
-    rp.post({uri: Microservices.activities.uri + '/activity/new', body:data}).then((res) => {
-      try {
-        let newActivity = JSON.parse(res);
-        resolve(newActivity);
-      } catch(e) {
-        console.log(e);
-        reject(e);
-      }
-    }).catch((err) => {
-      console.log('Error', err);
-      reject(e);
-    });
-  });
-
-  return myPromise;
-}
 
 module.exports = {
   //Get Comment from database or return NOT FOUND
@@ -73,9 +41,6 @@ module.exports = {
           if (co.isEmpty(inserted.ops) || co.isEmpty(inserted.ops[0]))
             throw inserted;
           else {
-            if (inserted.ops[0].is_activity === undefined || inserted.ops[0].is_activity === true) {//insert activity if not test initiated
-              createActivity(inserted.ops[0]);
-            }
             return insertAuthor(inserted.ops[0]).then((comment) => {
               reply(co.rewriteID(comment));
             }).catch((error) => {
@@ -145,10 +110,10 @@ module.exports = {
           });
 
           let replies = [];
-          let arrayOfAuthorPromisses = [];
+          let arrayOfAuthorPromises = [];
           comments.forEach((comment, index) => {
             let promise = insertAuthor(comment);
-            arrayOfAuthorPromisses.push(promise);
+            arrayOfAuthorPromises.push(promise);
 
             //move replies to their places
             let parent_comment_id = comment.parent_comment;
@@ -163,7 +128,7 @@ module.exports = {
               }
             }
           });
-          Promise.all(arrayOfAuthorPromisses).then(() => {
+          Promise.all(arrayOfAuthorPromises).then(() => {
             //remove comments which were inserted as replies
             replies.reverse();
             replies.forEach((i) => {
@@ -196,10 +161,10 @@ module.exports = {
         });
 
         let replies = [];
-        let arrayOfAuthorPromisses = [];
+        let arrayOfAuthorPromises = [];
         comments.forEach((comment, index) => {
           let promise = insertAuthor(comment);
-          arrayOfAuthorPromisses.push(promise);
+          arrayOfAuthorPromises.push(promise);
 
           //move replies to their places
           let parent_comment_id = comment.parent_comment;
@@ -214,7 +179,7 @@ module.exports = {
             }
           }
         });
-        Promise.all(arrayOfAuthorPromisses).then(() => {
+        Promise.all(arrayOfAuthorPromises).then(() => {
           //remove comments which were inserted as replies
           replies.reverse();
           replies.forEach((i) => {
