@@ -1,5 +1,5 @@
 discussionservice:
-  image: slidewiki/discussionservice
+  image: slidewiki/discussionservice:latest-dev
   restart: on-failure:5
   expose:
     - "80"

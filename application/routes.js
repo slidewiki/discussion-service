@@ -94,7 +94,7 @@ module.exports = function(server) {
       validate: {
         payload: Joi.object().keys({
           title: Joi.string(),
-          text: Joi.string(),
+          text: Joi.string().allow(''),
           user_id: Joi.string(),
           content_id: Joi.string(),
           content_kind: Joi.string().valid('deck', 'slide'),
@@ -118,7 +118,7 @@ module.exports = function(server) {
         },
         payload: Joi.object().keys({
           title: Joi.string(),
-          text: Joi.string(),
+          text: Joi.string().allow(''),
           user_id: Joi.string(),
           content_id: Joi.string(),
           content_kind: Joi.string().valid('deck', 'slide'),
