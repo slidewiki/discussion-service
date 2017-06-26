@@ -98,8 +98,7 @@ module.exports = function(server) {
           user_id: Joi.string(),
           content_id: Joi.string(),
           content_kind: Joi.string().valid('deck', 'slide'),
-          parent_comment: Joi.string(),
-          is_activity: Joi.boolean()
+          parent_comment: Joi.string()
         }).requiredKeys('content_id', 'user_id'),
       },
       tags: ['api'],
@@ -123,8 +122,7 @@ module.exports = function(server) {
           user_id: Joi.string(),
           content_id: Joi.string(),
           content_kind: Joi.string().valid('deck', 'slide'),
-          parent_comment: Joi.string(),
-          is_activity: Joi.boolean()
+          parent_comment: Joi.string()
         }).requiredKeys('content_id', 'user_id'),
       },
       tags: ['api'],

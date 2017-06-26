@@ -41,14 +41,13 @@ describe('Database', () => {
         content_kind: 'slide',
         title: 'Dummy',
         text: 'dummy',
-        user_id: '000000000000000000000000',
-        is_activity: false
+        user_id: '000000000000000000000000'
       };
       let res = db.insert(comment);
       return Promise.all([
         res.should.be.fulfilled.and.eventually.not.be.empty,
         res.should.eventually.have.property('ops').that.is.not.empty,
-        res.should.eventually.have.deep.property('ops[0]').that.has.all.keys('_id', 'title', 'text', 'timestamp', 'content_id', 'content_kind', 'user_id', 'is_activity'),
+        res.should.eventually.have.deep.property('ops[0]').that.has.all.keys('_id', 'title', 'text', 'timestamp', 'content_id', 'content_kind', 'user_id'),
         res.should.eventually.have.deep.property('ops[0].title', comment.title)
       ]);
     });
@@ -59,14 +58,13 @@ describe('Database', () => {
         content_kind: 'slide',
         title: 'Dummy',
         text: 'dummy',
-        user_id: '000000000000000000000000',
-        is_activity: false
+        user_id: '000000000000000000000000'
       };
       let ins = db.insert(comment);
       let res = ins.then((ins) => db.get(ins.ops[0]._id));
       return Promise.all([
         res.should.be.fulfilled.and.eventually.not.be.empty,
-        res.should.eventually.have.all.keys('_id', 'title', 'text', 'timestamp', 'content_id', 'content_kind', 'user_id', 'is_activity'),
+        res.should.eventually.have.all.keys('_id', 'title', 'text', 'timestamp', 'content_id', 'content_kind', 'user_id'),
         res.should.eventually.have.property('text', comment.text)
       ]);
     });
@@ -77,23 +75,21 @@ describe('Database', () => {
         content_kind: 'slide',
         title: 'Dummy',
         text: 'dummy',
-        user_id: '000000000000000000000000',
-        is_activity: false
+        user_id: '000000000000000000000000'
       };
       let comment2 = {
         content_id: '112233445566778899000671',
         content_kind: 'slide',
         title: 'Dummy2',
         text: 'dummy2',
-        user_id: '000000000000000000000000',
-        is_activity: false
+        user_id: '000000000000000000000000'
       };
       let ins = db.insert(comment);
       let res = ins.then((ins) => db.replace(ins.ops[0]._id, comment2));
       res = ins.then((ins) => db.get(ins.ops[0]._id));
       return Promise.all([
         res.should.be.fulfilled.and.eventually.not.be.empty,
-        res.should.eventually.have.all.keys('_id', 'title', 'text', 'timestamp', 'content_id', 'content_kind', 'user_id', 'is_activity'),
+        res.should.eventually.have.all.keys('_id', 'title', 'text', 'timestamp', 'content_id', 'content_kind', 'user_id'),
         res.should.eventually.have.property('title', 'Dummy2')
       ]);
     });
@@ -106,8 +102,7 @@ describe('Database', () => {
         content_kind: content_kind,
         title: 'Dummy',
         text: 'dummy',
-        user_id: '000000000000000000000000',
-        is_activity: false
+        user_id: '000000000000000000000000'
       };
       let ins = db.insert(comment);
       return ins.then(() => db.getCount(content_kind, content_id)).should.be.fulfilled.and.become(1);
@@ -119,8 +114,7 @@ describe('Database', () => {
         content_kind: 'slide',
         title: 'Dummy',
         text: 'dummy',
-        user_id: '000000000000000000000000',
-        is_activity: false
+        user_id: '000000000000000000000000'
       };
 
       let ins = db.insert(comment);
@@ -134,16 +128,14 @@ describe('Database', () => {
         content_kind: 'slide',
         title: 'Dummy',
         text: 'dummy',
-        user_id: '000000000000000000000000',
-        is_activity: false
+        user_id: '000000000000000000000000'
       };
       let comment2 = {
         content_id: '112233445566778899000671',
         content_kind: 'slide',
         title: 'Dummy2',
         text: 'dummy2',
-        user_id: '000000000000000000000000',
-        is_activity: false
+        user_id: '000000000000000000000000'
       };
       let ins = db.insert(comment);
       let res = ins.then((ins) => db.insert(comment2));
@@ -156,16 +148,14 @@ describe('Database', () => {
         content_kind: 'slide',
         title: 'Dummy',
         text: 'dummy',
-        user_id: '000000000000000000000000',
-        is_activity: false
+        user_id: '000000000000000000000000'
       };
       let comment2 = {
         content_id: '112233445566778899000671',
         content_kind: 'slide',
         title: 'Dummy2',
         text: 'dummy2',
-        user_id: '000000000000000000000000',
-        is_activity: false
+        user_id: '000000000000000000000000'
       };
       let ins = db.insert(comment);
       let res = ins.then((ins) => db.insert(comment2));
