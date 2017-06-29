@@ -26,8 +26,7 @@ describe('REST API', () => {
     content_kind: 'slide',
     title: 'Dummy',
     text: 'dummy',
-    user_id: '000000000000000000000000',
-    is_activity: false
+    user_id: '000000000000000000000000'
   };
   let options = {
     method: 'POST',

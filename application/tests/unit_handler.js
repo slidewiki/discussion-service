@@ -26,8 +26,7 @@ describe('Discussion service', () => {
     content_kind: content_kind,
     title: 'Unit_handler_dummy',
     text: 'handler_dummy',
-    user_id: '000000000000000000000000',
-    is_activity: false
+    user_id: '000000000000000000000000'
   };
 
   context('Using all exported functions - ', () => {
@@ -94,8 +93,7 @@ describe('Discussion service', () => {
           content_kind: content_kind,
           title: 'Updated_Unit_handler_dummy',
           text: 'handler_dummy',
-          user_id: '000000000000000000000000',
-          is_activity: false
+          user_id: '000000000000000000000000'
         };
         let req = {
           params: {
