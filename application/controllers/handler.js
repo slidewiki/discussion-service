@@ -245,10 +245,10 @@ module.exports = {
               tryRequestLog(request, 'error', error);
               reply(boom.badImplementation());
             });
-          }).catch((error) => {
-            tryRequestLog(request, 'error', error);
-            reply(boom.badImplementation());
-          });
+        }).catch((error) => {
+          tryRequestLog(request, 'error', error);
+          reply(boom.badImplementation());
+        });
       }).catch((error) => {
         tryRequestLog(request, 'error', error);
         reply(boom.badImplementation());
