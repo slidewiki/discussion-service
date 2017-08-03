@@ -366,6 +366,18 @@ function getSubdecksAndSlides(content_kind, id) {
   return myPromise;
 }
 
+function getArrayOfChildren(node) {//recursive
+  let array = [{
+    type: node.type,
+    id: node.id
+  }];
+  if (node.children) {
+    node.children.forEach((child) => {
+      array = array.concat(getArrayOfChildren(child));
+    });
+  }
+  return array;
+}
 
 //This function tries to use request log and uses console.log if this doesnt work - this is the case in unit tests
 function tryRequestLog(request, message, _object) {
