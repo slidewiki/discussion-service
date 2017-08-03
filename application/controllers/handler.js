@@ -118,6 +118,12 @@ module.exports = {
             .then((comments) => {
               comments.forEach((comment) => {
                 co.rewriteID(comment);
+
+                //set content_name
+                const slide = arrayOfDecksAndSlides.find((slide) =>  (slide.type === comment.content_kind && slide.id === comment.content_id));
+                if (slide) {
+                  comment.content_name = slide.title;
+                }
               });
 
               let replies = [];
@@ -214,13 +220,31 @@ module.exports = {
       });
   },
 
-  //Get the number of comments from database for the id in the request
+  //Get the number of comments from database for the id in the request (also for subdecks and slides)
   getDiscussionCount: function(request, reply) {
-    return addContentRevisionIdIfMissing(request.params.content_kind, request.params.id)
+    const content_kind = request.params.content_kind;
+    return addContentRevisionIdIfMissing(content_kind, request.params.id)
       .then((contentId) => {
-        commentDB.getCount(request.params.content_kind, encodeURIComponent(contentId))
-          .then((count) => {
-            reply (count);
+
+        return getSubdecksAndSlides(content_kind, contentId).then((arrayOfDecksAndSlides) => {
+          let slideIdArray = [];
+          let deckIdArray = [];
+
+          arrayOfDecksAndSlides.forEach((deckOrSlide) => {
+            if (deckOrSlide.type === 'slide') {
+              slideIdArray.push(deckOrSlide.id);
+            } else {
+              deckIdArray.push(deckOrSlide.id);
+            }
+          });
+
+          return commentDB.getCountAllWithProperties(slideIdArray, deckIdArray)
+            .then((count) => {
+              reply (count);
+            }).catch((error) => {
+              tryRequestLog(request, 'error', error);
+              reply(boom.badImplementation());
+            });
           }).catch((error) => {
             tryRequestLog(request, 'error', error);
             reply(boom.badImplementation());
@@ -369,7 +393,8 @@ function getSubdecksAndSlides(content_kind, id) {
 function getArrayOfChildren(node) {//recursive
   let array = [{
     type: node.type,
-    id: node.id
+    id: node.id,
+    title: node.title
   }];
   if (node.children) {
     node.children.forEach((child) => {

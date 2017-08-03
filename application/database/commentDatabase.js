@@ -32,6 +32,16 @@ module.exports = {
       .then((col) => col.count({content_kind: content_kind, content_id: identifier }));
   },
 
+  getCountAllWithProperties: function(slideIdArray, deckIdArray) {
+    const slideIdQuery = {$and: [{content_kind: 'slide'}, { content_id: { $in: slideIdArray } }]};
+    const deckIdQuery = {$and: [{content_kind: 'deck'}, { content_id: { $in: deckIdArray } }]};
+    const query = {$or: [slideIdQuery, deckIdQuery]};
+
+    return helper.connectToDatabase()
+      .then((db) => db.collection(collectionName))
+      .then((col) => col.count(query));
+  },
+
   getAllWithProperties: function(slideIdArray, deckIdArray) {
     const slideIdQuery = {$and: [{content_kind: 'slide'}, { content_id: { $in: slideIdArray } }]};
     const deckIdQuery = {$and: [{content_kind: 'deck'}, { content_id: { $in: deckIdArray } }]};
