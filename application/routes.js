@@ -25,22 +25,6 @@ module.exports = function(server) {
     }
   });
 
-  //Get discussion with content id id from database and return the entire tree (when not available, return NOT FOUND). Validate id
-  server.route({
-    method: 'GET',
-    path: '/discussion/{id}',
-    handler: handlers.getDiscussion,
-    config: {
-      validate: {
-        params: {
-          id: Joi.string()
-        },
-      },
-      tags: ['api'],
-      description: 'Get a discussion (for slides)'
-    }
-  });
-
   //Get the number of comments in a discussion with content id id from database
   server.route({
     method: 'GET',

@@ -92,6 +92,7 @@ module.exports = {
   },
 
   //Get All Comments from database for the id in the request
+  //In case of a deck -  include its subdecks and slides
   getDiscussion: function(request, reply) {
     let content_kind = request.params.content_kind;
     if (content_kind === undefined) {// this is just to serve requests from old front-end version
@@ -100,54 +101,74 @@ module.exports = {
 
     return addContentRevisionIdIfMissing(content_kind, request.params.id)
       .then((contentId) => {
-        commentDB.getAll(content_kind, encodeURIComponent(contentId))
-        .then((comments) => {
-          // if (co.isEmpty(comments))
-          //   reply(boom.notFound());
-          // else {
-          comments.forEach((comment) => {
-            co.rewriteID(comment);
-          });
 
-          let replies = [];
-          let arrayOfAuthorPromises = [];
-          comments.forEach((comment, index) => {
-            let promise = insertAuthor(comment);
-            arrayOfAuthorPromises.push(promise);
+        return getSubdecksAndSlides(content_kind, contentId).then((arrayOfDecksAndSlides) => {
+          let slideIdArray = [];
+          let deckIdArray = [];
 
-            //move replies to their places
-            let parent_comment_id = comment.parent_comment;
-            if (parent_comment_id !== undefined) {
-              let parentComment = findComment(comments, parent_comment_id);
-              if (parentComment !== null) {//found parent comment
-                if (parentComment.replies === undefined) {//first reply
-                  parentComment.replies = [];
-                }
-                parentComment.replies.push(comment);
-                replies.push(index);//remember index, to remove it later
-              }
+          arrayOfDecksAndSlides.forEach((deckOrSlide) => {
+            if (deckOrSlide.type === 'slide') {
+              slideIdArray.push(deckOrSlide.id);
+            } else {
+              deckIdArray.push(deckOrSlide.id);
             }
           });
-          Promise.all(arrayOfAuthorPromises).then(() => {
-            //remove comments which were inserted as replies
-            replies.reverse();
-            replies.forEach((i) => {
-              comments.splice(i, 1);
+
+          return commentDB.getAllWithProperties(slideIdArray, deckIdArray)
+            .then((comments) => {
+              comments.forEach((comment) => {
+                co.rewriteID(comment);
+
+                //set content_name
+                const slide = arrayOfDecksAndSlides.find((slide) =>  (slide.type === comment.content_kind && slide.id === comment.content_id));
+                if (slide) {
+                  comment.content_name = slide.title;
+                }
+              });
+
+              let replies = [];
+              let arrayOfAuthorPromises = [];
+              comments.forEach((comment, index) => {
+                let promise = insertAuthor(comment);
+                arrayOfAuthorPromises.push(promise);
+
+                //move replies to their places
+                let parent_comment_id = comment.parent_comment;
+                if (parent_comment_id !== undefined) {
+                  let parentComment = findComment(comments, parent_comment_id);
+                  if (parentComment !== null) {//found parent comment
+                    if (parentComment.replies === undefined) {//first reply
+                      parentComment.replies = [];
+                    }
+                    parentComment.replies.push(comment);
+                    replies.push(index);//remember index, to remove it later
+                  }
+                }
+              });
+              Promise.all(arrayOfAuthorPromises).then(() => {
+                //remove comments which were inserted as replies
+                replies.reverse();
+                replies.forEach((i) => {
+                  comments.splice(i, 1);
+                });
+
+                let jsonReply = JSON.stringify(comments);
+                reply(jsonReply);
+
+              }).catch((error) => {
+                tryRequestLog(request, 'error arrayOfAuthorPromises', error);
+                reply(boom.badImplementation());
+              });
+            }).catch((error) => {
+              tryRequestLog(request, 'error getAllWithProperties', error);
+              reply(boom.badImplementation());
             });
-
-            let jsonReply = JSON.stringify(comments);
-            reply(jsonReply);
-
-          }).catch((error) => {
-            tryRequestLog(request, 'error', error);
-            reply(boom.badImplementation());
-          });
         }).catch((error) => {
-          tryRequestLog(request, 'error', error);
+          tryRequestLog(request, 'error getSubdecksAndSlides', error);
           reply(boom.badImplementation());
         });
       }).catch((error) => {
-        tryRequestLog(request, 'error', error);
+        tryRequestLog(request, 'error addContentRevisionIdIfMissing', error);
         reply(boom.badImplementation());
       });
   },
@@ -199,17 +220,35 @@ module.exports = {
       });
   },
 
-  //Get the number of comments from database for the id in the request
+  //Get the number of comments from database for the id in the request (also for subdecks and slides)
   getDiscussionCount: function(request, reply) {
-    return addContentRevisionIdIfMissing(request.params.content_kind, request.params.id)
+    const content_kind = request.params.content_kind;
+    return addContentRevisionIdIfMissing(content_kind, request.params.id)
       .then((contentId) => {
-        commentDB.getCount(request.params.content_kind, encodeURIComponent(contentId))
-          .then((count) => {
-            reply (count);
-          }).catch((error) => {
-            tryRequestLog(request, 'error', error);
-            reply(boom.badImplementation());
+
+        return getSubdecksAndSlides(content_kind, contentId).then((arrayOfDecksAndSlides) => {
+          let slideIdArray = [];
+          let deckIdArray = [];
+
+          arrayOfDecksAndSlides.forEach((deckOrSlide) => {
+            if (deckOrSlide.type === 'slide') {
+              slideIdArray.push(deckOrSlide.id);
+            } else {
+              deckIdArray.push(deckOrSlide.id);
+            }
           });
+
+          return commentDB.getCountAllWithProperties(slideIdArray, deckIdArray)
+            .then((count) => {
+              reply (count);
+            }).catch((error) => {
+              tryRequestLog(request, 'error', error);
+              reply(boom.badImplementation());
+            });
+        }).catch((error) => {
+          tryRequestLog(request, 'error', error);
+          reply(boom.badImplementation());
+        });
       }).catch((error) => {
         tryRequestLog(request, 'error', error);
         reply(boom.badImplementation());
@@ -318,6 +357,51 @@ function addContentRevisionIdIfMissing(contentKind, contentId) {
   });
 
   return myPromise;
+}
+
+function getSubdecksAndSlides(content_kind, id) {
+  let myPromise = new Promise((resolve, reject) => {
+    if (content_kind === 'slide') {
+      resolve([{
+        type: content_kind,
+        id: id
+      }]);
+    } else {//if deck => get activities of all its decks and slides
+      let arrayOfSubdecksAndSlides = [];
+      rp.get({uri: Microservices.deck.uri +  '/decktree/' + id}).then((res) => {
+
+        try {
+          let parsed = JSON.parse(res);
+          arrayOfSubdecksAndSlides = getArrayOfChildren(parsed);
+        } catch(e) {
+          console.log(e);
+          resolve(arrayOfSubdecksAndSlides);
+        }
+
+        resolve(arrayOfSubdecksAndSlides);
+      }).catch((err) => {
+        console.log('Error', err);
+
+        resolve(arrayOfSubdecksAndSlides);
+      });
+    }
+  });
+
+  return myPromise;
+}
+
+function getArrayOfChildren(node) {//recursive
+  let array = [{
+    type: node.type,
+    id: node.id,
+    title: node.title
+  }];
+  if (node.children) {
+    node.children.forEach((child) => {
+      array = array.concat(getArrayOfChildren(child));
+    });
+  }
+  return array;
 }
 
 //This function tries to use request log and uses console.log if this doesnt work - this is the case in unit tests
