@@ -17,8 +17,11 @@ module.exports = function(server) {
       validate: {
         params: {
           content_kind: Joi.string().valid('deck', 'slide'),
-          id: Joi.string()
+          id: Joi.string().description('The id of the deck/slide')
         },
+        query: {
+          metaonly: Joi.string().description('Set to true to return only metadata without the list of comments')
+        }
       },
       tags: ['api'],
       description: 'Get a discussion'
@@ -34,7 +37,7 @@ module.exports = function(server) {
       validate: {
         params: {
           content_kind: Joi.string().valid('deck', 'slide'),
-          id: Joi.string()
+          id: Joi.string().description('The id of the deck/slide')
         },
       },
       tags: ['api'],
@@ -42,32 +45,21 @@ module.exports = function(server) {
     }
   });
 
-  //Get all discussions from database and return the entire tree (when not available, return NOT FOUND).
-  server.route({
-    method: 'GET',
-    path: '/discussion/all',
-    handler: handlers.getAllDiscussions,
-    config: {
-      tags: ['api'],
-      description: 'Get all discussions'
-    }
-  });
-
   //Get comment with id id from database and return it (when not available, return NOT FOUND). Validate id
-  server.route({
-    method: 'GET',
-    path: '/comment/{id}',
-    handler: handlers.getComment,
-    config: {
-      validate: {
-        params: {
-          id: Joi.string()
-        },
-      },
-      tags: ['api'],
-      description: 'Get a comment'
-    }
-  });
+  // server.route({
+  //   method: 'GET',
+  //   path: '/comment/{id}',
+  //   handler: handlers.getComment,
+  //   config: {
+  //     validate: {
+  //       params: {
+  //         id: Joi.string()
+  //       },
+  //     },
+  //     tags: ['api'],
+  //     description: 'Get a comment'
+  //   }
+  // });
 
   //Create new comment (by payload) and return it (...). Validate payload
   server.route({
@@ -91,28 +83,28 @@ module.exports = function(server) {
   });
 
   //Update comment with id id (by payload) and return it (...). Validate payload
-  server.route({
-    method: 'PUT',
-    path: '/comment/{id}',
-    handler: handlers.updateComment,
-    config: {
-      validate: {
-        params: {
-          id: Joi.string().alphanum().lowercase()
-        },
-        payload: Joi.object().keys({
-          title: Joi.string(),
-          text: Joi.string().allow(''),
-          user_id: Joi.string(),
-          content_id: Joi.string(),
-          content_kind: Joi.string().valid('deck', 'slide'),
-          parent_comment: Joi.string()
-        }).requiredKeys('content_id', 'user_id'),
-      },
-      tags: ['api'],
-      description: 'Replace a comment'
-    }
-  });
+  // server.route({
+  //   method: 'PUT',
+  //   path: '/comment/{id}',
+  //   handler: handlers.updateComment,
+  //   config: {
+  //     validate: {
+  //       params: {
+  //         id: Joi.string().alphanum().lowercase()
+  //       },
+  //       payload: Joi.object().keys({
+  //         title: Joi.string(),
+  //         text: Joi.string().allow(''),
+  //         user_id: Joi.string(),
+  //         content_id: Joi.string(),
+  //         content_kind: Joi.string().valid('deck', 'slide'),
+  //         parent_comment: Joi.string()
+  //       }).requiredKeys('content_id', 'user_id'),
+  //     },
+  //     tags: ['api'],
+  //     description: 'Replace a comment'
+  //   }
+  // });
 
   //Delete comment with id id (by payload) . Validate payload
   server.route({
@@ -142,7 +134,7 @@ module.exports = function(server) {
         },
       },
       tags: ['api'],
-      description: 'Delete a discussion (example id: 8)'
+      description: 'Delete a discussion'
     }
   });
 };
