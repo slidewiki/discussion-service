@@ -41,8 +41,8 @@ describe('Discussion service', () => {
       })
       .catch((Error) => {
         console.log(Error);
-        throw Error;
         expect(1).to.equals(2);
+        throw Error;
       });
     });
     it('Get comment', () => {
@@ -68,13 +68,13 @@ describe('Discussion service', () => {
         })
         .catch((Error) => {
           console.log(Error);
-          throw Error;
           expect(1).to.equals(2);
+          throw Error;
         });
       }).catch((Error) => {
         console.log(Error);
-        throw Error;
         expect(1).to.equals(2);
+        throw Error;
       });
     });
     it('Update comment', () => {
@@ -110,19 +110,19 @@ describe('Discussion service', () => {
             return;
           }).catch((Error) => {
             console.log(Error);
-            throw Error;
             expect(1).to.equals(2);
+            throw Error;
           });
         }).catch((Error) => {
           console.log(Error);
-          throw Error;
           expect(1).to.equals(2);
+          throw Error;
         });
       })
       .catch((Error) => {
         console.log(Error);
-        throw Error;
         expect(1).to.equals(2);
+        throw Error;
       });
     });
     it('Count comments', () => {
@@ -138,8 +138,8 @@ describe('Discussion service', () => {
       })
       .catch((Error) => {
         console.log('Error', Error);
-        throw Error;
         expect(1).to.equals(2);
+        throw Error;
       });
     });
     it('Delete comment', () => {
@@ -162,14 +162,14 @@ describe('Discussion service', () => {
         })
         .catch((Error) => {
           console.log('Error', Error);
-          throw Error;
           expect(1).to.equals(2);
+          throw Error;
         });
       })
       .catch((Error) => {
         console.log('Error', Error);
-        throw Error;
         expect(1).to.equals(2);
+        throw Error;
       });
     });
   });

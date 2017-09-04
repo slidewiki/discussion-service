@@ -1,6 +1,7 @@
 /*
 Handles the requests by executing stuff and replying to the client. Uses promises to get stuff done.
 */
+/* eslint promise/always-return: "off" */
 
 'use strict';
 
@@ -98,7 +99,7 @@ let self = module.exports = {
       self.getAllDiscussions(request, reply);
     } else {
       let content_kind = request.params.content_kind;
-      
+
       return addContentRevisionIdIfMissing(content_kind, request.params.id)
         .then((contentId) => {
 
@@ -331,7 +332,7 @@ function addContentRevisionIfMissing(comment) {
         } catch(e) {
           console.log(e);
         }
-        resolve({revisionId: contentRevisionId});
+        resolve(comment);
       }).catch((err) => {
         console.log('Error', err);
         resolve(comment);
