@@ -29,21 +29,21 @@ module.exports = function(server) {
   });
 
   //Get the number of comments in a discussion with content id id from database
-  server.route({
-    method: 'GET',
-    path: '/discussion/count/{content_kind}/{id}',
-    handler: handlers.getDiscussionCount,
-    config: {
-      validate: {
-        params: {
-          content_kind: Joi.string().valid('deck', 'slide'),
-          id: Joi.string().description('The id of the deck/slide')
-        },
-      },
-      tags: ['api'],
-      description: 'Get the number of comments in a discussion'
-    }
-  });
+  // server.route({
+  //   method: 'GET',
+  //   path: '/discussion/count/{content_kind}/{id}',
+  //   handler: handlers.getDiscussionCount,
+  //   config: {
+  //     validate: {
+  //       params: {
+  //         content_kind: Joi.string().valid('deck', 'slide'),
+  //         id: Joi.string().description('The id of the deck/slide')
+  //       },
+  //     },
+  //     tags: ['api'],
+  //     description: 'Get the number of comments in a discussion'
+  //   }
+  // });
 
   //Get comment with id id from database and return it (when not available, return NOT FOUND). Validate id
   // server.route({
