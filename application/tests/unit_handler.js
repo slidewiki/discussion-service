@@ -39,11 +39,11 @@ describe('Discussion service', () => {
         expect(result.id).to.not.equal(undefined);
         return;
       })
-      .catch((Error) => {
-        console.log(Error);
-        expect(1).to.equals(2);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log(Error);
+          expect(1).to.equals(2);
+          throw Error;
+        });
     });
     it('Get comment', () => {
       let req = {
@@ -66,11 +66,11 @@ describe('Discussion service', () => {
           expect(result2.title).to.equal(comment.title);
           return;
         })
-        .catch((Error) => {
-          console.log(Error);
-          expect(1).to.equals(2);
-          throw Error;
-        });
+          .catch((Error) => {
+            console.log(Error);
+            expect(1).to.equals(2);
+            throw Error;
+          });
       }).catch((Error) => {
         console.log(Error);
         expect(1).to.equals(2);
@@ -119,11 +119,11 @@ describe('Discussion service', () => {
           throw Error;
         });
       })
-      .catch((Error) => {
-        console.log(Error);
-        expect(1).to.equals(2);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log(Error);
+          expect(1).to.equals(2);
+          throw Error;
+        });
     });
     it('Count comments', () => {
       let req = {
@@ -136,11 +136,11 @@ describe('Discussion service', () => {
         expect(result).to.equal(1);
         return;
       })
-      .catch((Error) => {
-        console.log('Error', Error);
-        expect(1).to.equals(2);
-        throw Error;
-      });
+        .catch((Error) => {
+          console.log('Error', Error);
+          expect(1).to.equals(2);
+          throw Error;
+        });
     });
     it('Delete comment', () => {
       let req = {
@@ -160,17 +160,17 @@ describe('Discussion service', () => {
           expect(result2.msg).to.not.equal(undefined);
           return;
         })
+          .catch((Error) => {
+            console.log('Error', Error);
+            expect(1).to.equals(2);
+            throw Error;
+          });
+      })
         .catch((Error) => {
           console.log('Error', Error);
           expect(1).to.equals(2);
           throw Error;
         });
-      })
-      .catch((Error) => {
-        console.log('Error', Error);
-        expect(1).to.equals(2);
-        throw Error;
-      });
     });
   });
 });
