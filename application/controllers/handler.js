@@ -1,6 +1,7 @@
 /*
 Handles the requests by executing stuff and replying to the client. Uses promises to get stuff done.
 */
+/* eslint promise/always-return: "off" */
 
 'use strict';
 
@@ -98,7 +99,7 @@ let self = module.exports = {
       self.getAllDiscussions(request, reply);
     } else {
       let content_kind = request.params.content_kind;
-      
+
       return addContentRevisionIdIfMissing(content_kind, request.params.id)
         .then((contentId) => {
 
@@ -162,8 +163,7 @@ let self = module.exports = {
                       comments.splice(i, 1);
                     });
 
-                    let jsonReply = (metaonly === undefined) ? JSON.stringify(comments) : JSON.stringify({items: comments, count: comments.length});//BACKWARD COMPATIBILITY FOR OLD PLATFORM VERSION WHICH DOES NOT SEND metaonly parameter
-
+                    let jsonReply = JSON.stringify({items: comments, count: comments.length});
                     reply(jsonReply);
 
                   }).catch((error) => {
@@ -331,7 +331,7 @@ function addContentRevisionIfMissing(comment) {
         } catch(e) {
           console.log(e);
         }
-        resolve({revisionId: contentRevisionId});
+        resolve(comment);
       }).catch((err) => {
         console.log('Error', err);
         resolve(comment);
