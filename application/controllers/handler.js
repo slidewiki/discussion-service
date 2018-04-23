@@ -318,7 +318,7 @@ function insertAuthors(comments) {
     //Create array of user ids
     let arrayOfUserIds = [];
     comments.forEach((comment) => {
-      const id = comment.user_id;
+      const id = parseInt(comment.user_id);
       if (id !== '0' && !arrayOfUserIds.includes(id)) {
         arrayOfUserIds.push(id);
       }
