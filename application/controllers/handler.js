@@ -345,7 +345,7 @@ function insertAuthors(comments) {
             let username = userData.username;
             let avatar = userData.picture;
             comments.forEach((comment) => {
-              if (comment.user_id === userId) {
+              if (parseInt(comment.user_id) === userId) {
                 comment.author = {
                   id: comment.user_id,
                   username: username,
