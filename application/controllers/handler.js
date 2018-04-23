@@ -138,11 +138,7 @@ let self = module.exports = {
                   });
 
                   let replies = [];
-                  let arrayOfAuthorPromises = [];
                   comments.forEach((comment, index) => {
-                    let promise = insertAuthor(comment);
-                    arrayOfAuthorPromises.push(promise);
-
                     //move replies to their places
                     let parent_comment_id = comment.parent_comment;
                     if (parent_comment_id !== undefined) {
@@ -156,7 +152,7 @@ let self = module.exports = {
                       }
                     }
                   });
-                  Promise.all(arrayOfAuthorPromises).then(() => {
+                  insertAuthors(comments).then((comments) => {
                     //remove comments which were inserted as replies
                     replies.reverse();
                     replies.forEach((i) => {
@@ -195,11 +191,7 @@ let self = module.exports = {
         });
 
         let replies = [];
-        let arrayOfAuthorPromises = [];
         comments.forEach((comment, index) => {
-          let promise = insertAuthor(comment);
-          arrayOfAuthorPromises.push(promise);
-
           //move replies to their places
           let parent_comment_id = comment.parent_comment;
           if (parent_comment_id !== undefined) {
@@ -213,7 +205,7 @@ let self = module.exports = {
             }
           }
         });
-        Promise.all(arrayOfAuthorPromises).then(() => {
+        insertAuthors(comments).then((comments) => {
           //remove comments which were inserted as replies
           replies.reverse();
           replies.forEach((i) => {
@@ -314,6 +306,90 @@ function insertAuthor(comment) {
       };
       resolve(comment);
     });
+  });
+
+  return myPromise;
+}
+
+//insert author data to an array of comments using user microservice
+function insertAuthors(comments) {
+  let myPromise = new Promise((resolve, reject) => {
+
+    //Create array of user ids
+    let arrayOfUserIds = [];
+    comments.forEach((comment) => {
+      const id = comment.user_id;
+      if (id !== '0' && !arrayOfUserIds.includes(id)) {
+        arrayOfUserIds.push(id);
+      }
+    });
+
+    if (arrayOfUserIds.length === 0) {
+      comments.forEach((comment) => {
+        comment.author = {
+          id: comment.user_id,
+          username: 'unknown',
+          avatar: ''
+        };
+      });
+      resolve(comments);
+    } else {
+
+      let data = JSON.stringify(arrayOfUserIds);
+      rp.post({uri: Microservices.user.uri + '/users', body:data}).then((res) => {
+        try {
+          let userDataArray = JSON.parse(res);
+
+          userDataArray.forEach((userData) => {
+            let userId = userData._id;
+            let username = userData.username;
+            let avatar = userData.picture;
+            comments.forEach((comment) => {
+              if (comment.user_id === userId) {
+                comment.author = {
+                  id: comment.user_id,
+                  username: username,
+                  avatar: avatar
+                };
+              }
+            });
+          });
+
+          comments.forEach((comment) => {
+            if (comment.author === undefined) {
+              comment.author = {
+                id: comment.user_id,
+                username: 'unknown',
+                avatar: ''
+              };
+            }
+          });
+          resolve(comments);
+
+        } catch(e) {
+          console.log(e);
+          comments.forEach((comment) => {
+            comment.author = {
+              id: comment.user_id,
+              username: 'user ' + comment.user_id,
+              avatar: ''
+            };
+          });
+          resolve(comments);
+        }
+
+      }).catch((err) => {
+        console.log('Error', err);
+        comments.forEach((comment) => {
+          comment.author = {
+            id: comment.user_id,
+            username: 'user ' + comment.user_id,
+            avatar: ''
+          };
+        });
+        resolve(comments);
+      });
+    }
   });
 
   return myPromise;
