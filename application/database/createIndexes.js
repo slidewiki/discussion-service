@@ -8,8 +8,8 @@ const helper = require('./helper');
 // it should always return a promise
 module.exports = function() {
 
-  return helper.getCollection('discussions').then((decks) => {
-    return decks.createIndexes([
+  return helper.getCollection('discussions').then((discussions) => {
+    return discussions.createIndexes([
       { key: {'content_kind': 1, 'content_id': 1} }
     ]);
   });
