@@ -8,12 +8,9 @@ const helper = require('./helper');
 // it should always return a promise
 module.exports = function() {
 
-  // SAMPLE CODE
-  return helper.getCollection('decks').then((decks) => {
+  return helper.getCollection('discussions').then((decks) => {
     return decks.createIndexes([
-      { key: {'revisions.contentItems.ref.id': 1} },
-      { key: {'revisions.contentItems.ref.revision': 1} },
-      { key: {'revisions.contentItems.kind': 1} },
+      { key: {'content_kind': 1, 'content_id': 1} }
     ]);
   });
 
