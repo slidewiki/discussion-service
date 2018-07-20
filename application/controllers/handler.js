@@ -281,11 +281,13 @@ function insertAuthor(comment) {
   let myPromise = new Promise((resolve, reject) => {
 
     let username = 'unknown';
+    let displayName = undefined;
     let avatar = '';
     rp.get({uri: Microservices.user.uri + '/user/' + comment.user_id}).then((res) => {
       try {
         let parsed = JSON.parse(res);
         username = parsed.username;
+        displayName = parsed.displayName;
         avatar = parsed.picture;
       } catch(e) {
         console.log(e);
@@ -294,6 +296,7 @@ function insertAuthor(comment) {
       comment.author = {
         id: comment.user_id,
         username: username,
+        displayName: displayName,
         avatar: avatar
       };
       resolve(comment);
@@ -343,12 +346,14 @@ function insertAuthors(comments) {
           userDataArray.forEach((userData) => {
             let userId = userData._id;
             let username = userData.username;
+            let displayName = userData.displayName;
             let avatar = userData.picture;
             comments.forEach((comment) => {
               if (parseInt(comment.user_id) === userId) {
                 comment.author = {
                   id: comment.user_id,
                   username: username,
+                  displayName: displayName,
                   avatar: avatar
                 };
               }
