@@ -91,7 +91,7 @@ let self = module.exports = {
 
     return commentDB.partlyUpdate(query, {
       $set: {
-        visible: false
+        visibility: false
       }
     }).then(() => {
       reply({'msg': 'comment was successfully hidden...'});
