@@ -6,6 +6,7 @@ Handles the requests by executing stuff and replying to the client. Uses promise
 'use strict';
 
 const boom = require('boom'), //Boom gives us some predefined http codes and proper responses
+  oid = require('mongodb').ObjectID,
   commentDB = require('../database/commentDatabase'), //Database functions specific for comments
   co = require('../common');
 
@@ -84,21 +85,16 @@ let self = module.exports = {
 
   //Hide Comment with id id
   hideComment: function(request, reply) {
-    return commentDB.get(encodeURIComponent(request.params.id)).then((comment) => {
-      if (co.isEmpty(comment))
-        reply(boom.notFound());
-      else {
-        comment.visible = false;
-        return commentDB.replace(encodeURIComponent(request.params.id), comment).then((replaced) => {
-          if (co.isEmpty(replaced.value))
-            throw replaced;
-          else
-            reply(replaced.value);
-        }).catch((error) => {
-          tryRequestLog(request, 'error', error);
-          reply(boom.badImplementation());
-        });
+    const query = {
+      _id: oid(request.params.id)
+    };
+
+    return commentDB.partlyUpdate(query, {
+      $set: {
+        visible: false
       }
+    }).then(() => {
+      reply({'msg': 'comment was successfully hidden...'});
     }).catch((error) => {
       tryRequestLog(request, 'error', error);
       reply(boom.badImplementation());
