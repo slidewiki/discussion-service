@@ -34,6 +34,9 @@ const comment = {
     content_kind: {
       type: 'string',
       enum: ['deck', 'slide']
+    },
+    visibility: {
+      type: 'boolean'
     }
   },
   required: ['content_id', 'user_id']

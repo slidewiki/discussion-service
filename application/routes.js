@@ -122,6 +122,22 @@ module.exports = function(server) {
     }
   });
 
+  //Hide comment with id id (by payload) . Validate payload
+  server.route({
+    method: 'PUT',
+    path: '/comment/hide',
+    handler: handlers.hideComment,
+    config: {
+      validate: {
+        payload: {
+          id: Joi.string()
+        },
+      },
+      tags: ['api'],
+      description: 'Hide a comment'
+    }
+  });
+
   //Delete discussion with content id id (by payload) . Validate payload
   server.route({
     method: 'DELETE',

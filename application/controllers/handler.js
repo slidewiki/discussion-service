@@ -82,6 +82,29 @@ let self = module.exports = {
     });
   },
 
+  //Hide Comment with id id
+  hideComment: function(request, reply) {
+    return commentDB.get(encodeURIComponent(request.params.id)).then((comment) => {
+      if (co.isEmpty(comment))
+        reply(boom.notFound());
+      else {
+        comment.visible = false;
+        return commentDB.replace(encodeURIComponent(request.params.id), comment).then((replaced) => {
+          if (co.isEmpty(replaced.value))
+            throw replaced;
+          else
+            reply(replaced.value);
+        }).catch((error) => {
+          tryRequestLog(request, 'error', error);
+          reply(boom.badImplementation());
+        });
+      }
+    }).catch((error) => {
+      tryRequestLog(request, 'error', error);
+      reply(boom.badImplementation());
+    });
+  },
+
   //Delete Discussions with content id id
   deleteDiscussion: function(request, reply) {
     return commentDB.deleteAllWithContentID(encodeURIComponent(request.payload.content_id)).then(() =>
