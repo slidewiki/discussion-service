@@ -104,6 +104,12 @@ module.exports = {
       });
   },
 
+  partlyUpdate: (findQuery, updateQuery, params = undefined) => {
+    return helper.connectToDatabase()
+      .then((db) => db.collection(collectionName))
+      .then((col) => col.update(findQuery, updateQuery, params));
+  },
+
   delete: function(identifier) {
     return helper.connectToDatabase()
       .then((db) => db.collection(collectionName))
