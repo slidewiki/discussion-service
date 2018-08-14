@@ -85,16 +85,21 @@ let self = module.exports = {
 
   //Hide Comment with id id
   hideComment: function(request, reply) {
-    const query = {
-      _id: oid(request.params.id)
-    };
-
-    return commentDB.partlyUpdate(query, {
-      $set: {
-        visibility: false
+    return commentDB.get(encodeURIComponent(request.payload.id)).then((comment) => {
+      if (co.isEmpty(comment))
+        reply(boom.notFound());
+      else {
+        comment.visibility = false;
+        return commentDB.replace(request.payload.id, comment).then((replaced) => {
+          if (co.isEmpty(replaced.value))
+            throw replaced;
+          else
+            reply(comment);
+        }).catch((error) => {
+          tryRequestLog(request, 'error', error);
+          reply(boom.badImplementation());
+        });
       }
-    }).then(() => {
-      reply({'msg': 'comment was successfully hidden...'});
     }).catch((error) => {
       tryRequestLog(request, 'error', error);
       reply(boom.badImplementation());
