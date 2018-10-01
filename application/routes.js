@@ -20,46 +20,14 @@ module.exports = function(server) {
           id: Joi.string().description('The id of the deck/slide')
         },
         query: {
-          metaonly: Joi.string().description('Set to true to return only metadata without the list of comments')
+          metaonly: Joi.string().description('Set to true to return only metadata without the list of comments'),
+          all_revisions: Joi.string().description('Set to true to search for activities regardles of the content revision'),
         }
       },
       tags: ['api'],
       description: 'Get a discussion'
     }
   });
-
-  //Get the number of comments in a discussion with content id id from database
-  // server.route({
-  //   method: 'GET',
-  //   path: '/discussion/count/{content_kind}/{id}',
-  //   handler: handlers.getDiscussionCount,
-  //   config: {
-  //     validate: {
-  //       params: {
-  //         content_kind: Joi.string().valid('deck', 'slide'),
-  //         id: Joi.string().description('The id of the deck/slide')
-  //       },
-  //     },
-  //     tags: ['api'],
-  //     description: 'Get the number of comments in a discussion'
-  //   }
-  // });
-
-  //Get comment with id id from database and return it (when not available, return NOT FOUND). Validate id
-  // server.route({
-  //   method: 'GET',
-  //   path: '/comment/{id}',
-  //   handler: handlers.getComment,
-  //   config: {
-  //     validate: {
-  //       params: {
-  //         id: Joi.string()
-  //       },
-  //     },
-  //     tags: ['api'],
-  //     description: 'Get a comment'
-  //   }
-  // });
 
   //Create new comment (by payload) and return it (...). Validate payload
   server.route({
@@ -81,30 +49,6 @@ module.exports = function(server) {
       description: 'Create a new comment'
     }
   });
-
-  //Update comment with id id (by payload) and return it (...). Validate payload
-  // server.route({
-  //   method: 'PUT',
-  //   path: '/comment/{id}',
-  //   handler: handlers.updateComment,
-  //   config: {
-  //     validate: {
-  //       params: {
-  //         id: Joi.string().alphanum().lowercase()
-  //       },
-  //       payload: Joi.object().keys({
-  //         title: Joi.string(),
-  //         text: Joi.string().allow(''),
-  //         user_id: Joi.string(),
-  //         content_id: Joi.string(),
-  //         content_kind: Joi.string().valid('deck', 'slide'),
-  //         parent_comment: Joi.string()
-  //       }).requiredKeys('content_id', 'user_id'),
-  //     },
-  //     tags: ['api'],
-  //     description: 'Replace a comment'
-  //   }
-  // });
 
   //Delete comment with id id (by payload) . Validate payload
   server.route({
