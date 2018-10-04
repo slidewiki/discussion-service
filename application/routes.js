@@ -21,7 +21,7 @@ module.exports = function(server) {
         },
         query: {
           metaonly: Joi.string().description('Set to true to return only metadata without the list of comments'),
-          all_revisions: Joi.string().description('Set to true to search for comments regardles of the content revision'),
+          all_revisions: Joi.string().description('Set to true to search for comments regardles of the content revision')
         }
       },
       tags: ['api'],

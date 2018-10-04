@@ -130,11 +130,11 @@ let self = module.exports = {
           return getSubdecksAndSlides(content_kind, contentId).then((arrayOfDecksAndSlides) => {
             let slideIdArray = [];
             let deckIdArray = [];
-            
+
             const all_revisions = request.query.all_revisions;
             arrayOfDecksAndSlides.forEach((deckOrSlide) => {
               const id = (all_revisions === 'true') ? new RegExp('^' + deckOrSlide.id.split('-')[0]) : deckOrSlide.id;
-              
+
               if (deckOrSlide.type === 'slide') {
                 slideIdArray.push(id);
               } else {
@@ -455,7 +455,7 @@ function addContentRevisionIfMissing(comment) {
 function addContentRevisionIdIfMissing(contentKind, contentId) {
   let myPromise = new Promise((resolve, reject) => {
     let contentIdParts = contentId.split('-');
-    if (contentIdParts.length > 1) {//there is a revision id
+    if (contentIdParts.length > 1) {//revision id is already there
       resolve(contentId);
     } else {
       rp.get({uri: Microservices.deck.uri + '/' + contentKind + '/' + contentId}).then((res) => {
@@ -502,7 +502,6 @@ function getSubdecksAndSlides(content_kind, id) {
         resolve(arrayOfSubdecksAndSlides);
       }).catch((err) => {
         console.log('Error', err);
-
         resolve(arrayOfSubdecksAndSlides);
       });
     }
