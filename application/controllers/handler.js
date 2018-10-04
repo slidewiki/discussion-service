@@ -130,12 +130,15 @@ let self = module.exports = {
           return getSubdecksAndSlides(content_kind, contentId).then((arrayOfDecksAndSlides) => {
             let slideIdArray = [];
             let deckIdArray = [];
-
+            
+            const all_revisions = request.query.all_revisions;
             arrayOfDecksAndSlides.forEach((deckOrSlide) => {
+              const id = (all_revisions === 'true') ? new RegExp('^' + deckOrSlide.id.split('-')[0]) : deckOrSlide.id;
+              
               if (deckOrSlide.type === 'slide') {
-                slideIdArray.push(deckOrSlide.id);
+                slideIdArray.push(id);
               } else {
-                deckIdArray.push(deckOrSlide.id);
+                deckIdArray.push(id);
               }
             });
 
