@@ -461,7 +461,7 @@ function addContentRevisionIdIfMissing(contentKind, contentId) {
       rp.get({uri: Microservices.deck.uri + '/' + contentKind + '/' + contentId}).then((res) => {
         try {
           let parsed = JSON.parse(res);
-          let revisionId = 1;
+          let revisionId = parsed.revision;
           if (parsed.revisions !== undefined && parsed.revisions.length > 0 && parsed.revisions[0] !== null) {
             revisionId = (parsed.active) ? parsed.active : (parsed.revisions.length - 1);
           }
