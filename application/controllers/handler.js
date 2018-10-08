@@ -158,7 +158,7 @@ let self = module.exports = {
                     co.rewriteID(comment);
 
                     //set content_name
-                    const slide = arrayOfDecksAndSlides.find((slide) =>  (slide.type === comment.content_kind && slide.id === comment.content_id));
+                    const slide = arrayOfDecksAndSlides.find((slide) =>  (slide.type === comment.content_kind && slide.id.split('-')[0] === comment.content_id.split('-')[0]));
                     if (slide) {
                       comment.content_name = slide.title;
                     }
