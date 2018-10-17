@@ -131,14 +131,34 @@ let self = module.exports = {
             let slideIdArray = [];
             let deckIdArray = [];
 
-            const all_revisions = request.query.all_revisions;
+            const include_previous_revisions = request.query.include_previous_revisions;
             arrayOfDecksAndSlides.forEach((deckOrSlide) => {
-              const id = (all_revisions === 'true') ? new RegExp('^' + deckOrSlide.id.split('-')[0]) : deckOrSlide.id;
 
               if (deckOrSlide.type === 'slide') {
-                slideIdArray.push(id);
+                slideIdArray.push(deckOrSlide.id);
               } else {
-                deckIdArray.push(id);
+                deckIdArray.push(deckOrSlide.id);
+              }
+              if (include_previous_revisions === 'true') {
+                let idSplit = deckOrSlide.id.split('-');
+                let id = idSplit[0];
+                let revId = (idSplit.length > 1) ? parseInt(idSplit[1]) : 0;
+
+                //add id without revision
+                if (deckOrSlide.type === 'slide') {
+                  slideIdArray.push(id);
+                } else {
+                  deckIdArray.push(id);
+                }
+
+                //add ids for previous revisions
+                for (let i = 1; i < revId; i++) {
+                  if (deckOrSlide.type === 'slide') {
+                    slideIdArray.push(id + '-' + String(i));
+                  } else {
+                    deckIdArray.push(id + '-' + String(i));
+                  }
+                }
               }
             });
 
